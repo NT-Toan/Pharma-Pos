@@ -1,0 +1,15 @@
+C:\c_sharp\QLNT.BUS\bin\Debug\net10.0\QLNT.BUS.deps.json
+C:\c_sharp\QLNT.BUS\bin\Debug\net10.0\QLNT.BUS.dll
+C:\c_sharp\QLNT.BUS\bin\Debug\net10.0\QLNT.BUS.pdb
+C:\c_sharp\QLNT.BUS\bin\Debug\net10.0\QLNT.DAO.dll
+C:\c_sharp\QLNT.BUS\bin\Debug\net10.0\QLNT.DAO.pdb
+C:\c_sharp\QLNT.BUS\obj\Debug\net10.0\QLNT.BUS.csproj.AssemblyReference.cache
+C:\c_sharp\QLNT.BUS\obj\Debug\net10.0\QLNT.BUS.GeneratedMSBuildEditorConfig.editorconfig
+C:\c_sharp\QLNT.BUS\obj\Debug\net10.0\QLNT.BUS.AssemblyInfoInputs.cache
+C:\c_sharp\QLNT.BUS\obj\Debug\net10.0\QLNT.BUS.AssemblyInfo.cs
+C:\c_sharp\QLNT.BUS\obj\Debug\net10.0\QLNT.BUS.csproj.CoreCompileInputs.cache
+C:\c_sharp\QLNT.BUS\obj\Debug\net10.0\QLNT.BUS.csproj.Up2Date
+C:\c_sharp\QLNT.BUS\obj\Debug\net10.0\QLNT.BUS.dll
+C:\c_sharp\QLNT.BUS\obj\Debug\net10.0\refint\QLNT.BUS.dll
+C:\c_sharp\QLNT.BUS\obj\Debug\net10.0\QLNT.BUS.pdb
+C:\c_sharp\QLNT.BUS\obj\Debug\net10.0\ref\QLNT.BUS.dll
