@@ -33,6 +33,8 @@ M1 đã có `LayBang`, `ThucThi`, `LayGiaTri`; `ChayGiaoDich` chưa sẵn sàng 
 2. Chuẩn bị form nhập hóa đơn: nút `…` để chọn nhân viên, khách hàng, thuốc; vùng tổng tiền dễ thấy; mã, đơn giá, thành tiền và tổng tiền là ô chỉ đọc. Form chỉ gọi BUS, không viết SQL trong GUI.
 3. Thống nhất sớm với M2/M4 các hàm lấy thuốc và khuyến mãi sẽ gọi. M3 sở hữu form hóa đơn; M1 sở hữu `Program.cs` và màn hình chính để tránh hai người sửa cùng file.
 
+**Cập nhật source:** đã có danh sách hóa đơn/chi tiết, form lập nháp, chọn nhân viên/khách hàng/thuốc, tính tiền nháp và in hóa đơn đã tồn tại (có thể chọn máy in PDF). Form nháp chưa lưu xuống database, chưa sửa/xóa hóa đơn và chưa trừ/hoàn tồn kho; cần M1 hoàn thiện transaction trước khi bật ghi dữ liệu. Chưa xác nhận runtime với SQL Server.
+
 **Tạm chờ M1 + M2 + M4 bàn giao:** chưa ghép thao tác lưu/sửa/xóa Hóa đơn và trừ/hoàn tồn kho.
 
 ### M4 — Tường: ưu tiên hàm khuyến mãi cho M3
