@@ -6,6 +6,7 @@ public class KMHoaDonBUS
 {
     private static ArrayList? danhSachKMHD;
     private readonly CTKhuyenMaiBUS ctkmBUS = new CTKhuyenMaiBUS();
+    private readonly KhuyenMaiDAO dao = new KhuyenMaiDAO();
 
     private static ArrayList LayDanhSach()
     {
@@ -27,9 +28,19 @@ public class KMHoaDonBUS
         return ds;
     }
 
+    public ArrayList LayTheoCTKM(string maCTKM)
+    {
+        ArrayList kq = new ArrayList();
+        foreach (KMHoaDon km in LayDanhSach())
+        {
+            if (km.MaCTKM.Equals(maCTKM, StringComparison.OrdinalIgnoreCase))
+                kq.Add(km);
+        }
+        return kq;
+    }
+
     public static void TaiLai() => danhSachKMHD = null;
 
-    // Lấy mốc giảm giá hóa đơn cao nhất mà tổng tiền hàng đạt tới
     public KMHoaDon? LayMocApDung(decimal tongTienHang, DateTime ngay)
     {
         KMHoaDon? mocThoa = null;
@@ -49,5 +60,25 @@ public class KMHoaDonBUS
         }
 
         return mocThoa;
+    }
+
+    public KetQua Luu(KMHoaDon hd)
+    {
+        if (hd.MucTienHD < 0)
+            return KetQua.Loi("Mức tiền hóa đơn không được âm.");
+
+        if (hd.PhanTramGiam <= 0 || hd.PhanTramGiam > 100)
+            return KetQua.Loi("Phần trăm giảm phải từ 1 đến 100.");
+
+        dao.ThemKMHoaDon(hd);
+        TaiLai();
+        return KetQua.Ok("Lưu mốc giảm hóa đơn thành công.");
+    }
+
+    public KetQua Xoa(string maKM, decimal mucTien)
+    {
+        dao.XoaKMHoaDon(maKM, mucTien);
+        TaiLai();
+        return KetQua.Ok("Xóa mốc giảm hóa đơn thành công.");
     }
 }

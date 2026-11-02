@@ -87,7 +87,7 @@ public sealed class frmMain : Form
         ThemNut(danhSachMenu, "Nhập hàng", null);
         ThemNut(danhSachMenu, "Khuyến mãi", () => MoFormCon(new frmKhuyenMai()));
         ThemNhom(danhSachMenu, "Báo cáo và hệ thống");
-        ThemNut(danhSachMenu, "Thống kê", null);
+        ThemNut(danhSachMenu, "Thống kê", () => MoFormCon(new frmThongKe()));
         ThemNut(danhSachMenu, "Tham số", null);
 
         ChonNut(nutTrangChinh);

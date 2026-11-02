@@ -1,27 +1,25 @@
 {
   "format": 1,
   "restore": {
-    "C:\\c_sharp\\QLNT.BUS\\QLNT.BUS.csproj": {}
+    "D:\\Pharma-Pos\\QLNT.BUS\\QLNT.BUS.csproj": {}
   },
   "projects": {
-    "C:\\c_sharp\\QLNT.BUS\\QLNT.BUS.csproj": {
+    "D:\\Pharma-Pos\\QLNT.BUS\\QLNT.BUS.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\c_sharp\\QLNT.BUS\\QLNT.BUS.csproj",
+        "projectUniqueName": "D:\\Pharma-Pos\\QLNT.BUS\\QLNT.BUS.csproj",
         "projectName": "QLNT.BUS",
-        "projectPath": "C:\\c_sharp\\QLNT.BUS\\QLNT.BUS.csproj",
-        "packagesPath": "C:\\Users\\thanh\\.nuget\\packages\\",
-        "outputPath": "C:\\c_sharp\\QLNT.BUS\\obj\\",
+        "projectPath": "D:\\Pharma-Pos\\QLNT.BUS\\QLNT.BUS.csproj",
+        "packagesPath": "C:\\Users\\Tuongwf\\.nuget\\packages\\",
+        "outputPath": "D:\\Pharma-Pos\\QLNT.BUS\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "C:\\Users\\thanh\\AppData\\Roaming\\NuGet\\NuGet.Config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+          "C:\\Users\\Tuongwf\\AppData\\Roaming\\NuGet\\NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net10.0"
         ],
         "sources": {
-          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
@@ -29,8 +27,8 @@
             "framework": "net10.0",
             "targetAlias": "net10.0",
             "projectReferences": {
-              "C:\\c_sharp\\QLNT.DAO\\QLNT.DAO.csproj": {
-                "projectPath": "C:\\c_sharp\\QLNT.DAO\\QLNT.DAO.csproj"
+              "D:\\Pharma-Pos\\QLNT.DAO\\QLNT.DAO.csproj": {
+                "projectPath": "D:\\Pharma-Pos\\QLNT.DAO\\QLNT.DAO.csproj"
               }
             }
           }
@@ -67,7 +65,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.401/PortableRuntimeIdentifierGraph.json",
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.403/PortableRuntimeIdentifierGraph.json",
           "packagesToPrune": {
             "Microsoft.CSharp": "(,4.7.32767]",
             "Microsoft.VisualBasic": "(,10.4.32767]",
@@ -345,24 +343,22 @@
         }
       }
     },
-    "C:\\c_sharp\\QLNT.DAO\\QLNT.DAO.csproj": {
+    "D:\\Pharma-Pos\\QLNT.DAO\\QLNT.DAO.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\c_sharp\\QLNT.DAO\\QLNT.DAO.csproj",
+        "projectUniqueName": "D:\\Pharma-Pos\\QLNT.DAO\\QLNT.DAO.csproj",
         "projectName": "QLNT.DAO",
-        "projectPath": "C:\\c_sharp\\QLNT.DAO\\QLNT.DAO.csproj",
-        "packagesPath": "C:\\Users\\thanh\\.nuget\\packages\\",
-        "outputPath": "C:\\c_sharp\\QLNT.DAO\\obj\\",
+        "projectPath": "D:\\Pharma-Pos\\QLNT.DAO\\QLNT.DAO.csproj",
+        "packagesPath": "C:\\Users\\Tuongwf\\.nuget\\packages\\",
+        "outputPath": "D:\\Pharma-Pos\\QLNT.DAO\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "C:\\Users\\thanh\\AppData\\Roaming\\NuGet\\NuGet.Config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+          "C:\\Users\\Tuongwf\\AppData\\Roaming\\NuGet\\NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net10.0"
         ],
         "sources": {
-          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
@@ -414,7 +410,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.401/PortableRuntimeIdentifierGraph.json",
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.403/PortableRuntimeIdentifierGraph.json",
           "packagesToPrune": {
             "Microsoft.CSharp": "(,4.7.32767]",
             "Microsoft.VisualBasic": "(,10.4.32767]",

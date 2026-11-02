@@ -6,6 +6,7 @@ public class KMSanPhamBUS
 {
     private static ArrayList? danhSachKMSP;
     private readonly CTKhuyenMaiBUS ctkmBUS = new CTKhuyenMaiBUS();
+    private readonly KhuyenMaiDAO dao = new KhuyenMaiDAO();
 
     private static ArrayList LayDanhSach()
     {
@@ -27,9 +28,19 @@ public class KMSanPhamBUS
         return ds;
     }
 
+    public ArrayList LayTheoCTKM(string maCTKM)
+    {
+        ArrayList kq = new ArrayList();
+        foreach (KMSanPham sp in LayDanhSach())
+        {
+            if (sp.MaCTKM.Equals(maCTKM, StringComparison.OrdinalIgnoreCase))
+                kq.Add(sp);
+        }
+        return kq;
+    }
+
     public static void TaiLai() => danhSachKMSP = null;
 
-    // Lấy phần trăm giảm theo thuốc và ngày bán (nếu có nhiều CTKM thì lấy mức cao nhất)
     public decimal LayPhanTramGiam(string maThuoc, DateTime ngay)
     {
         decimal maxGiam = 0;
@@ -45,5 +56,22 @@ public class KMSanPhamBUS
             }
         }
         return maxGiam;
+    }
+
+    public KetQua Luu(KMSanPham sp)
+    {
+        if (sp.PhanTramGiam <= 0 || sp.PhanTramGiam > 100)
+            return KetQua.Loi("Phần trăm giảm phải từ 1 đến 100.");
+
+        dao.LuuKMSanPham(sp);
+        TaiLai();
+        return KetQua.Ok("Lưu giảm giá sản phẩm thành công.");
+    }
+
+    public KetQua Xoa(string maKM, string maThuoc)
+    {
+        dao.XoaKMSanPham(maKM, maThuoc);
+        TaiLai();
+        return KetQua.Ok("Xóa giảm giá sản phẩm thành công.");
     }
 }
