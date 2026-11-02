@@ -1,96 +1,112 @@
 using System.Data;
 using Microsoft.Data.SqlClient;
 
-
 public class MyConnection
 {
+    private static readonly string serverName =
+        Environment.GetEnvironmentVariable("QLNT_SQL_SERVER") ?? "localhost";
+    private static readonly string databaseName =
+        Environment.GetEnvironmentVariable("QLNT_DATABASE") ?? "QLNhaThuoc";
+    private static readonly string connString = TaoChuoiKetNoi();
+    private SqlConnection? connection;
 
-    private string connString = "Server=localhost;Database=QLNhaThuoc;Integrated Security=True;TrustServerCertificate=True;";
-    private SqlConnection? connection = null;
+    private static string TaoChuoiKetNoi()
+    {
+        var builder = new SqlConnectionStringBuilder
+        {
+            DataSource = serverName,
+            InitialCatalog = databaseName,
+            IntegratedSecurity = true,
+            TrustServerCertificate = true
+        };
+        return builder.ConnectionString;
+    }
+
+    private static void MoKetNoi(SqlConnection ketNoi)
+    {
+        try
+        {
+            ketNoi.Open();
+        }
+        catch (SqlException ex) when (ex.Number == 4060)
+        {
+            throw new InvalidOperationException(
+                $"Không mở được database '{databaseName}' trên SQL Server '{serverName}'. " +
+                "Hãy tạo database này và cấp quyền cho tài khoản Windows hiện tại. " +
+                "Sau đó chọn database làm database hiện hành khi chạy D:\\QLNT_v2.sql, " +
+                "rồi chạy D:\\QLNT_data.sql để nạp dữ liệu mẫu.",
+                ex);
+        }
+    }
+
     public SqlConnection getConnection()
     {
-        if (connection == null)
-        {
-            connection = new SqlConnection(connString);
-        }
+        connection ??= new SqlConnection(connString);
         if (connection.State == ConnectionState.Closed)
-        {
-            connection.Open();
-        }
+            MoKetNoi(connection);
 
         return connection;
     }
+
     public void dongKetNoi()
     {
-        if (connection != null &&
-            connection.State == ConnectionState.Open)
-        {
+        if (connection?.State == ConnectionState.Open)
             connection.Close();
-        }
     }
-    // cái này dùng để lấy dữ liệu từ database về, trả về 1 bảng dữ liệu thường dùng hàm select để gọi các bảng ra 
+
     public DataTable LayBang(string sql, params SqlParameter[] thamSo)
     {
-        DataTable bang = new DataTable();
-        using (SqlConnection ketNoi = new SqlConnection(connString))
-        using (SqlCommand lenh = new SqlCommand(sql, ketNoi))
-        using (SqlDataAdapter boDoc = new SqlDataAdapter(lenh))
-        {
-            lenh.Parameters.AddRange(thamSo);
-            ketNoi.Open();
-            boDoc.Fill(bang);
-        }
-
+        var bang = new DataTable();
+        using var ketNoi = new SqlConnection(connString);
+        using var lenh = new SqlCommand(sql, ketNoi);
+        using var boDoc = new SqlDataAdapter(lenh);
+        lenh.Parameters.AddRange(thamSo);
+        MoKetNoi(ketNoi);
+        boDoc.Fill(bang);
         return bang;
     }
-    // cái này dùng để thực hiện các câu lệnh insert, update, delete, trả về số dòng bị ảnh hưởng
+
     public int ThucThi(string sql, params SqlParameter[] thamso)
     {
-        using (SqlConnection ketNoi = new SqlConnection(connString))
-        using (SqlCommand lenh = new SqlCommand(sql, ketNoi))
-        {
-            lenh.Parameters.AddRange(thamso);
-            ketNoi.Open();
-            return lenh.ExecuteNonQuery();// pt yêu cầu sql sever thực hiện câu lệnh sql sever thực thi câu lệnh đó mà ko trả về bảng dữ liệu
-        }
+        using var ketNoi = new SqlConnection(connString);
+        using var lenh = new SqlCommand(sql, ketNoi);
+        lenh.Parameters.AddRange(thamso);
+        MoKetNoi(ketNoi);
+        return lenh.ExecuteNonQuery();
     }
-    //lấy giá trị đầu tiên của hàm 
+
     public object? LayGiaTri(string sql, params SqlParameter[] thamso)
     {
-        using (SqlConnection ketNoi = new SqlConnection(connString))
-        using (SqlCommand lenh = new SqlCommand(sql, ketNoi))
-        {
-            lenh.Parameters.AddRange(thamso);
-            ketNoi.Open();
-            return lenh.ExecuteScalar();// hàm này lấy 1 giá trị duy nhất từ câu lệnh sql, thường dùng để lấy giá trị tổng, đếm, min, max, sum
-        }
+        using var ketNoi = new SqlConnection(connString);
+        using var lenh = new SqlCommand(sql, ketNoi);
+        lenh.Parameters.AddRange(thamso);
+        MoKetNoi(ketNoi);
+        return lenh.ExecuteScalar();
     }
-    //chạy giao dịch là giữ liệu nhất quán khi thực hiện nó sẽ hoàn thành hay hông hoàn thành nha 
-    public bool ChayGiaoDich(string[] sql, SqlParameter[] thamso)
+
+    public T ChayGiaoDich<T>(Func<SqlConnection, SqlTransaction, T> thaoTac)
     {
-        using (SqlConnection ketNoi = new SqlConnection(connString))
+        ArgumentNullException.ThrowIfNull(thaoTac);
+        using var ketNoi = new SqlConnection(connString);
+        MoKetNoi(ketNoi);
+        using SqlTransaction giaoDich = ketNoi.BeginTransaction(IsolationLevel.Serializable);
+        try
         {
-            ketNoi.Open();
-            SqlTransaction giaoDich = ketNoi.BeginTransaction();// hàm này là bắt đầu 1 giao dịch, nó sẽ giữ liệu nhất quán khi thực hiện nó sẽ hoàn thành hay hông hoàn thành nha
+            T ketQua = thaoTac(ketNoi, giaoDich);
+            giaoDich.Commit();
+            return ketQua;
+        }
+        catch (Exception thaoTacException)
+        {
             try
             {
-                for (int i = 0; i < sql.Length; i++)
-                {
-                    using (SqlCommand lenh = new SqlCommand(sql[i], ketNoi, giaoDich))
-                    {
-                        lenh.Parameters.Add(thamso[i]);//lấy tham số của câu lệnh sql thứ i
-                        lenh.ExecuteNonQuery();//hàm này là thực hiện câu lệnh sql, nó sẽ trả về số dòng bị ảnh hưởng
-                    }
-                }
-                giaoDich.Commit();//khi thành công nó sẽ commit lại dữ liệu, nếu có lỗi nó sẽ rollback lại dữ liệu
-                return true;
+                giaoDich.Rollback();
             }
-            catch
+            catch (Exception rollbackException)
             {
-                giaoDich.Rollback();//nếu hông nó sẽ trả về false và rollback lại dữ liệu 
-                return false;
+                throw new AggregateException("Giao dịch thất bại và không thể rollback.", thaoTacException, rollbackException);
             }
-
+            throw;
         }
     }
 }

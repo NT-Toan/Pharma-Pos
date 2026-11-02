@@ -136,3 +136,28 @@ Các kết quả mong đợi bên dưới được suy ra từ source hiện t�
 | DB01 | Không có cache, mất kết nối SQL khi đọc thuốc | GUI nhận và xử lý ngoại lệ, không báo thành công. | Chưa xác nhận từng ca. |
 
 Khi chạy thử, ghi lại mã thuốc, số lượng, ngày bán, HSD, tồn thực tế, kết quả nhận được và người thực hiện. Chỉ chuyển trạng thái sang “Đã đạt” khi đã có kết quả thực tế phù hợp.
+
+## 7. Tích hợp M3 trong source hiện tại
+
+M3 có các lớp `HoaDon`/`CTHoaDon`, `HoaDonDAO`/`HoaDonBUS` và màn hình bán hàng. Màn hình danh sách hỗ trợ tìm hóa đơn, xem chi tiết, sửa, hủy và in/xuất PDF. Form lập hóa đơn hỗ trợ chọn nhân viên, khách hàng/khách lẻ, tạo khách hàng mới ngay trong cửa sổ chọn khách hàng (khách mới được tự chọn cho hóa đơn), thêm/xóa thuốc, sửa số lượng, voucher, tính giảm giá và tổng tiền.
+
+### 7.1. Ghi hóa đơn và tồn kho
+
+- Lưu hóa đơn mới ghi đầu hóa đơn, chi tiết và trừ tồn trong **một transaction Serializable**. Hóa đơn chỉ hoàn tất khi toàn bộ thao tác commit.
+- Trừ tồn bằng câu `UPDATE` có điều kiện `SOLUONG >= số lượng` và kiểm tra hạn dùng trong cùng transaction. Nếu thuốc hết hạn, không đủ tồn, không tồn tại hoặc một chi tiết không được ghi, transaction rollback và lỗi được báo cho người dùng.
+- Sửa hóa đơn khóa và đọc các chi tiết hiện có trong transaction, hoàn số lượng cũ, ghi lại đầu/chi tiết mới rồi trừ tồn mới. Việc này cũng rollback toàn bộ nếu một bước thất bại.
+- Hủy hóa đơn hoàn tồn và xóa chi tiết/đầu hóa đơn trong cùng transaction. Schema `HOADON` hiện **không có cột trạng thái hủy**, nên đây là xóa vật lý có hoàn kho, không phải lưu hóa đơn với trạng thái “đã hủy”.
+- Mã hóa đơn được sinh trong transaction theo định dạng `HD0001`; thao tác tạo đồng thời được khóa khi lấy mã để tránh cấp trùng.
+- Sau lưu/hủy thành công, cache thuốc/khuyến mãi và danh sách hóa đơn được tải lại.
+
+### 7.2. Thanh toán và in
+
+- Form kiểm tra tiền khách đưa không nhỏ hơn tổng thanh toán, hiển thị tiền thừa và cho in hóa đơn nháp hoặc hóa đơn đã lưu; chọn Microsoft Print to PDF trong hộp thoại máy in để lưu PDF.
+- Schema hiện không có cột/bảng lưu tiền khách đưa, tiền thừa hay trạng thái thanh toán. Hai giá trị này chỉ được đối chiếu trong form, không được lưu như dữ liệu thanh toán.
+- Khi có giảm giá thuốc, thành tiền đã giảm được lưu trên chi tiết; `TIENGIAM`/`TONGTIEN` lưu giảm cấp hóa đơn và số phải trả theo công thức của schema.
+
+### 7.3. Kiểm tra đã thực hiện và giới hạn
+
+`dotnet build .\QLNT.slnx --no-restore -p:BaseOutputPath=D:\Pharma-Pos-validation\bin\` thành công: 0 cảnh báo, 0 lỗi. Build dùng output riêng để không đụng các DLL GUI đang bị tiến trình chạy giữ khóa.
+
+Chưa thực hiện giao dịch runtime trên SQL Server trong phiên này; cần nghiệm thu với database đã nạp schema và dữ liệu: lưu thành công, thiếu tồn/hết hạn rollback không đổi kho, sửa tăng/giảm số lượng, hủy hoàn đúng tồn, tiền thừa và in/PDF. Không chạy thử bằng cách ghi dữ liệu vào database thật nếu chưa chuẩn bị dữ liệu kiểm thử riêng.
