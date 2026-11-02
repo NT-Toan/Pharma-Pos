@@ -78,10 +78,10 @@ public sealed class frmMain : Form
         Button nutTrangChinh = ThemNut(danhSachMenu, "Trang chính", MoTrangChinh);
         ThemNhom(danhSachMenu, "Danh mục");
         ThemNut(danhSachMenu, "Loại thuốc", () => MoFormCon(new frmLoaiThuoc()));
-        ThemNut(danhSachMenu, "Thuốc", null);
+        ThemNut(danhSachMenu, "Thuốc", () => MoFormCon(new frmThuoc()));
         ThemNut(danhSachMenu, "Khách hàng", null);
         ThemNut(danhSachMenu, "Nhân viên", null);
-        ThemNut(danhSachMenu, "Nhà cung cấp", null);
+        ThemNut(danhSachMenu, "Nhà cung cấp", () => MoFormCon(new frmNhaCungCap()));
         ThemNhom(danhSachMenu, "Giao dịch");
         ThemNut(danhSachMenu, "Bán hàng", null);
         ThemNut(danhSachMenu, "Nhập hàng", null);
