@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("QLNT.GUI")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+7f775543e5c91bc7beaf9b1431d94f4285c1d4d1")]
 [assembly: System.Reflection.AssemblyProductAttribute("QLNT.GUI")]
 [assembly: System.Reflection.AssemblyTitleAttribute("QLNT.GUI")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

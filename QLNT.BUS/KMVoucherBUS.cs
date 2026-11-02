@@ -6,6 +6,7 @@ public class KMVoucherBUS
 {
     private static ArrayList? danhSachVoucher;
     private readonly CTKhuyenMaiBUS ctkmBUS = new CTKhuyenMaiBUS();
+    private readonly KhuyenMaiDAO dao = new KhuyenMaiDAO();
 
     private static ArrayList LayDanhSach()
     {
@@ -29,6 +30,19 @@ public class KMVoucherBUS
         return ds;
     }
 
+    public ArrayList LayTatCa() => new ArrayList(LayDanhSach());
+
+    public ArrayList LayTheoCTKM(string maCTKM)
+    {
+        ArrayList kq = new ArrayList();
+        foreach (KMVoucher vc in LayDanhSach())
+        {
+            if (vc.MaCTKM.Equals(maCTKM, StringComparison.OrdinalIgnoreCase))
+                kq.Add(vc);
+        }
+        return kq;
+    }
+
     public static void TaiLai() => danhSachVoucher = null;
 
     public KMVoucher? LayTheoMa(string maVoucher)
@@ -41,7 +55,6 @@ public class KMVoucherBUS
         return null;
     }
 
-    // Kiểm tra hợp lệ: tồn tại, còn hạn, đúng khách hàng
     public KetQua KiemTraHopLe(string maVoucher, string? maKH, DateTime ngay)
     {
         KMVoucher? vc = LayTheoMa(maVoucher);
@@ -62,4 +75,43 @@ public class KMVoucherBUS
 
         return KetQua.Ok();
     }
+
+    public KetQua Them(KMVoucher vc)
+    {
+        if (string.IsNullOrWhiteSpace(vc.MaVoucher))
+            return KetQua.Loi("Mã voucher không được để trống.");
+
+        if (LayTheoMa(vc.MaVoucher) != null)
+            return KetQua.Loi($"Mã voucher '{vc.MaVoucher}' đã tồn tại.");
+
+        if (vc.PhanTramGiam <= 0 || vc.PhanTramGiam > 100)
+            return KetQua.Loi("Phần trăm giảm phải từ 1 đến 100.");
+
+        dao.ThemVoucher(vc);
+        TaiLai();
+        return KetQua.Ok("Thêm voucher thành công.");
+    }
+      public KetQua Sua(KMVoucher vc)
+    {
+        if (string.IsNullOrWhiteSpace(vc.MaVoucher))
+            return KetQua.Loi("Mã voucher không được để trống.");
+
+        if (LayTheoMa(vc.MaVoucher) == null)
+            return KetQua.Loi($"Mã voucher '{vc.MaVoucher}' không tồn tại để sửa.");
+
+        if (vc.PhanTramGiam <= 0 || vc.PhanTramGiam > 100)
+            return KetQua.Loi("Phần trăm giảm phải từ 1 đến 100.");
+
+        dao.SuaVoucher(vc);
+        TaiLai();
+        return KetQua.Ok("Cập nhật voucher thành công.");
+    }
+
+    public KetQua Xoa(string maVoucher)
+    {
+        dao.XoaVoucher(maVoucher);
+        TaiLai();
+        return KetQua.Ok("Xóa voucher thành công.");
+    }
+ 
 }
