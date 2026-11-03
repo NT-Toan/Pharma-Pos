@@ -79,8 +79,8 @@ public sealed class frmMain : Form
         ThemNhom(danhSachMenu, "Danh mục");
         ThemNut(danhSachMenu, "Loại thuốc", () => MoFormCon(new frmLoaiThuoc()));
         ThemNut(danhSachMenu, "Thuốc", () => MoFormCon(new frmThuoc()));
-        ThemNut(danhSachMenu, "Khách hàng", null);
-        ThemNut(danhSachMenu, "Nhân viên", null);
+        ThemNut(danhSachMenu, "Khách hàng", () => MoFormCon(new frmKhachHang()));
+        ThemNut(danhSachMenu, "Nhân viên", () => MoFormCon(new frmNhanVien()));
         ThemNut(danhSachMenu, "Nhà cung cấp", () => MoFormCon(new frmNhaCungCap()));
         ThemNhom(danhSachMenu, "Giao dịch");
         ThemNut(danhSachMenu, "Bán hàng", () => MoFormCon(new frmHoaDon()));
@@ -88,7 +88,7 @@ public sealed class frmMain : Form
         ThemNut(danhSachMenu, "Khuyến mãi", () => MoFormCon(new frmKhuyenMai()));
         ThemNhom(danhSachMenu, "Báo cáo và hệ thống");
         ThemNut(danhSachMenu, "Thống kê", () => MoFormCon(new frmThongKe()));
-        ThemNut(danhSachMenu, "Tham số", null);
+        ThemNut(danhSachMenu, "Tham số", () => MoFormCon(new frmThamSo()));
 
         ChonNut(nutTrangChinh);
         MoTrangChinh();
