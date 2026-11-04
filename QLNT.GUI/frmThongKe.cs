@@ -185,7 +185,7 @@ public sealed class frmThongKe : Form
         }
     }
 
-    private void XuatExcel()
+   private void XuatExcel()
     {
         if (bangHienTai == null || bangHienTai.Rows.Count == 0)
         {
@@ -195,8 +195,8 @@ public sealed class frmThongKe : Form
 
         using SaveFileDialog sfd = new()
         {
-            Filter = "Excel CSV (*.csv)|*.csv",
-            FileName = $"ThongKe_{DateTime.Now:yyyyMMdd_HHmmss}.csv"
+            Filter = "Excel Workbook (*.xlsx)|*.xlsx",
+            FileName = $"ThongKe_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx"
         };
 
         if (sfd.ShowDialog() == DialogResult.OK)
@@ -204,7 +204,7 @@ public sealed class frmThongKe : Form
             try
             {
                 ExcelHelper.XuatBang(bangHienTai, sfd.FileName);
-                MessageBox.Show("Xuất file thành công! Bạn có thể mở trực tiếp bằng Excel.", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show("Xuất file Excel (.xlsx) thành công!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
             catch (Exception ex)
             {
