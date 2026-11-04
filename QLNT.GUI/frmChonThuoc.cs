@@ -97,6 +97,7 @@ public sealed class frmChonThuoc : Form
             lvThuoc.BeginUpdate();
             try
             {
+                lvThuoc.SelectedItems.Clear();
                 lvThuoc.Items.Clear();
                 foreach (Thuoc thuoc in danhSach)
                 {
@@ -114,6 +115,7 @@ public sealed class frmChonThuoc : Form
             }
             if (lvThuoc.Items.Count > 0)
                 lvThuoc.Items[0].Selected = true;
+            CapNhatTonKhaDung();
         }
         catch (Exception ex)
         {
@@ -126,8 +128,9 @@ public sealed class frmChonThuoc : Form
     {
         if (lvThuoc.SelectedItems.Count == 0 || lvThuoc.SelectedItems[0].Tag is not Thuoc thuoc)
         {
-            nudSoLuong.Value = 0;
+            // Khi đổi dòng, ListView tạm thời không có lựa chọn. Hạ Minimum trước khi gán 0.
             nudSoLuong.Minimum = 0;
+            nudSoLuong.Value = 0;
             nudSoLuong.Enabled = false;
             btnChon.Enabled = false;
             lblTonKhaDung.Text = string.Empty;

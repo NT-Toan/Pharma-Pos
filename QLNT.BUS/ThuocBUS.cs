@@ -139,6 +139,50 @@ public class ThuocBUS
         return null;
     }
 
+    public KetQua NhapTuExcel(string duongDan)
+    {
+        try
+        {
+            ArrayList cacDong = ThuocExcel.Doc(duongDan);
+            LoaiThuocBUS.TaiLai();
+            TaiLai();
+            var danhSachNhap = new ArrayList();
+            foreach ((int soDong, Thuoc thuoc) in cacDong.Cast<(int, Thuoc)>())
+            {
+                // Mã kiểm tra tạm; DAO cấp mã chính thức trong giao dịch cho cả lô.
+                thuoc.MaThuoc = "TH0000";
+                string? loi = KiemTraDuLieu(thuoc);
+                if (loi != null) return KetQua.Loi($"Dòng {soDong}: {loi}");
+                foreach (Thuoc daCo in LayDanhSach().Cast<Thuoc>().Concat(danhSachNhap.Cast<Thuoc>()))
+                    if (daCo.TenThuoc.Trim().Equals(thuoc.TenThuoc, StringComparison.OrdinalIgnoreCase) &&
+                        daCo.MaLoai.Equals(thuoc.MaLoai, StringComparison.OrdinalIgnoreCase) && daCo.HSD?.Date == thuoc.HSD?.Date)
+                        return KetQua.Loi($"Dòng {soDong}: thuốc trùng tên, loại và hạn dùng với dữ liệu đã có. Toàn bộ file chưa được lưu.");
+                danhSachNhap.Add(thuoc);
+            }
+            int soLuong = new ThuocDAO().ThemHangLoat(danhSachNhap);
+            TaiLai();
+            return KetQua.Ok($"Đã nhập {soLuong} thuốc từ Excel. Tồn ban đầu là 0; hãy lập phiếu nhập để tăng kho.");
+        }
+        catch (Exception ex)
+        {
+            return KetQua.Loi("Không nhập được file Excel; toàn bộ file chưa được lưu: " + ex.Message);
+        }
+    }
+
+    public KetQua TaoMauExcel(string duongDan)
+    {
+        try
+        {
+            LoaiThuocBUS.TaiLai();
+            ThuocExcel.TaoMau(duongDan, new LoaiThuocBUS().LayTatCa());
+            return KetQua.Ok("Đã tạo file mẫu. Điền trang THUOC rồi dùng nút Nhập Excel.");
+        }
+        catch (Exception ex)
+        {
+            return KetQua.Loi("Không tạo được file mẫu: " + ex.Message);
+        }
+    }
+
     public KetQua Them(Thuoc thuoc)
     {
         try

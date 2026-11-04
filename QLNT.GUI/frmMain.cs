@@ -84,7 +84,7 @@ public sealed class frmMain : Form
         ThemNut(danhSachMenu, "Nhà cung cấp", () => MoFormCon(new frmNhaCungCap()));
         ThemNhom(danhSachMenu, "Giao dịch");
         ThemNut(danhSachMenu, "Bán hàng", () => MoFormCon(new frmHoaDon()));
-        ThemNut(danhSachMenu, "Nhập hàng", null);
+        ThemNut(danhSachMenu, "Nhập hàng", () => MoFormCon(new frmPhieuNhap()));
         ThemNut(danhSachMenu, "Khuyến mãi", () => MoFormCon(new frmKhuyenMai()));
         ThemNhom(danhSachMenu, "Báo cáo và hệ thống");
         ThemNut(danhSachMenu, "Thống kê", () => MoFormCon(new frmThongKe()));

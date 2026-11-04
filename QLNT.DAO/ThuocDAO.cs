@@ -1,7 +1,45 @@
+using System.Collections;
 using System.Data;
 using Microsoft.Data.SqlClient;
 public class ThuocDAO
 {
+    public int ThemHangLoat(ArrayList danhSach)
+    {
+        ArgumentNullException.ThrowIfNull(danhSach);
+        if (danhSach.Count == 0) throw new ArgumentException("Danh sách nhập trống.");
+        return new MyConnection().ChayGiaoDich((ketNoi, giaoDich) =>
+        {
+            int soLonNhat = 0;
+            using (var lenh = new SqlCommand("SELECT MATHUOC FROM THUOC WITH (UPDLOCK, HOLDLOCK)", ketNoi, giaoDich))
+            using (var reader = lenh.ExecuteReader())
+                while (reader.Read())
+                {
+                    string ma = reader.GetString(0);
+                    if (ma.Length == 6 && ma.StartsWith("TH", StringComparison.OrdinalIgnoreCase) &&
+                        int.TryParse(ma.AsSpan(2), out int so)) soLonNhat = Math.Max(soLonNhat, so);
+                }
+            if ((long)soLonNhat + danhSach.Count > 9999)
+                throw new InvalidOperationException("Không còn đủ mã thuốc theo định dạng TH0001.");
+            foreach (Thuoc thuoc in danhSach)
+            {
+                using var lenh = new SqlCommand(
+                    "IF EXISTS (SELECT 1 FROM THUOC WHERE TENTHUOC = @ten AND MALOAI = @loai " +
+                    "AND (HSD = @hsd OR (HSD IS NULL AND @hsd IS NULL))) " +
+                    "THROW 50001, N'Thuốc trùng tên, loại và hạn dùng. Toàn bộ lô nhập bị hủy.', 1; " +
+                    "INSERT INTO THUOC (MATHUOC, TENTHUOC, HSD, DONGIA, SOLUONG, MALOAI) " +
+                    "VALUES (@ma, @ten, @hsd, @gia, 0, @loai)", ketNoi, giaoDich);
+                lenh.Parameters.Add(new SqlParameter("@ma", SqlDbType.VarChar, 10) { Value = "TH" + (++soLonNhat).ToString("D4") });
+                lenh.Parameters.Add(new SqlParameter("@ten", SqlDbType.NVarChar, 100) { Value = thuoc.TenThuoc });
+                lenh.Parameters.Add(new SqlParameter("@hsd", SqlDbType.Date) { Value = (object?)thuoc.HSD?.Date ?? DBNull.Value });
+                lenh.Parameters.Add(new SqlParameter("@gia", SqlDbType.Decimal) { Precision = 18, Scale = 2, Value = thuoc.DonGia });
+                lenh.Parameters.Add(new SqlParameter("@loai", SqlDbType.VarChar, 10) { Value = thuoc.MaLoai });
+                if (lenh.ExecuteNonQuery() != 1)
+                    throw new InvalidOperationException("Lệnh thêm thuốc không tác động đúng 1 dòng; toàn bộ lô nhập bị hủy.");
+            }
+            return danhSach.Count;
+        });
+    }
+
     public DataTable LayTatCa()
     {
         const string sql =
