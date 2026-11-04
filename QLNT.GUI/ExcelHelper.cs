@@ -1,6 +1,5 @@
 using System.Data;
-using System.IO;
-using System.Text;
+using ClosedXML.Excel;
 
 namespace QLNT.GUI;
 
@@ -8,38 +7,19 @@ public static class ExcelHelper
 {
     public static void XuatBang(DataTable bang, string duongDan)
     {
-        var sb = new StringBuilder();
+        using var workbook = new XLWorkbook();
+        var worksheet = workbook.Worksheets.Add("Thống kê");
 
-        // Ghi tiêu đề cột
-        for (int i = 0; i < bang.Columns.Count; i++)
-        {
-            sb.Append(ChuanHoaGiaTri(bang.Columns[i].ColumnName));
-            if (i < bang.Columns.Count - 1) sb.Append(",");
-        }
-        sb.AppendLine();
+        // Đổ dữ liệu DataTable vào bảng Excel
+        var table = worksheet.Cell(1, 1).InsertTable(bang);
+        
+        // Thiết lập giao diện màu xanh trang nhã
+        table.Theme = XLTableTheme.TableStyleMedium9;
 
-        // Ghi các dòng dữ liệu
-        foreach (DataRow row in bang.Rows)
-        {
-            for (int i = 0; i < bang.Columns.Count; i++)
-            {
-                sb.Append(ChuanHoaGiaTri(row[i]?.ToString() ?? ""));
-                if (i < bang.Columns.Count - 1) sb.Append(",");
-            }
-            sb.AppendLine();
-        }
+        // Tự động căn chỉnh độ rộng cột theo nội dung chữ
+        worksheet.Columns().AdjustToContents();
 
-        // Ghi file với mã hóa UTF-8 kèm BOM để Excel hiển thị tiếng Việt có dấu chuẩn
-        File.WriteAllText(duongDan, sb.ToString(), Encoding.UTF8);
-    }
-
-    private static string ChuanHoaGiaTri(string giaTri)
-    {
-        if (giaTri.Contains(",") || giaTri.Contains("\"") || giaTri.Contains("\n"))
-        {
-            giaTri = giaTri.Replace("\"", "\"\"");
-            return $"\"{giaTri}\"";
-        }
-        return giaTri;
+        // Lưu trực tiếp thành file .xlsx
+        workbook.SaveAs(duongDan);
     }
 }

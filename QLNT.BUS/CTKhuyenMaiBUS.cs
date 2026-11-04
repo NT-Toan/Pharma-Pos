@@ -120,4 +120,23 @@ public class CTKhuyenMaiBUS
         }
         return KetQua.Loi("Lỗi khi xóa chương trình khuyến mãi.");
     }
+    public ArrayList TimKiem(string tuKhoa)
+    {
+        if (string.IsNullOrWhiteSpace(tuKhoa))
+            return LayTatCa();
+
+        string tuKhoaChuan = tuKhoa.Trim().ToLower();
+        var ketQua = new ArrayList();
+
+        foreach (CTKhuyenMai km in LayTatCa())
+        {
+            if (km.MaCTKM.ToLower().Contains(tuKhoaChuan) ||
+                km.TenCTKM.ToLower().Contains(tuKhoaChuan))
+            {
+                ketQua.Add(km);
+            }
+        }
+
+        return ketQua;
+    }
 }

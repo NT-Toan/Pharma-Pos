@@ -96,7 +96,7 @@ public sealed class frmKhuyenMai : Form
         btnThem.ForeColor = Color.White;
         btnThem.Click += (_, _) => XuLyThem();
 
-      var btnChiTiet = GiaoDienChung.TaoNutPhu("Chi tiết giảm giá...");
+        var btnChiTiet = GiaoDienChung.TaoNutPhu("Chi tiết giảm giá...");
         btnChiTiet.Click += (_, _) => MoChiTietGiamGia();
 
         pnlNut.Controls.Add(btnChiTiet);
@@ -249,26 +249,8 @@ public sealed class frmKhuyenMai : Form
     {
         try
         {
-            string tuKhoa = txtTimKiem.Text.Trim();
-            ArrayList tatCa = bus.LayTatCa();
-            ArrayList ketQua = new ArrayList();
-
-            if (string.IsNullOrWhiteSpace(tuKhoa))
-            {
-                ketQua = tatCa;
-            }
-            else
-            {
-                foreach (CTKhuyenMai km in tatCa)
-                {
-                    if (km.MaCTKM.Contains(tuKhoa, StringComparison.OrdinalIgnoreCase) ||
-                        km.TenCTKM.Contains(tuKhoa, StringComparison.OrdinalIgnoreCase))
-                    {
-                        ketQua.Add(km);
-                    }
-                }
-            }
-
+            string tuKhoa = txtTimKiem.Text;
+            ArrayList ketQua = bus.TimKiem(tuKhoa);
             HienThi(ketQua);
         }
         catch (Exception ex)
