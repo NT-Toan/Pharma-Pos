@@ -83,11 +83,15 @@ public sealed class frmThuoc : Form
         var btnThem = new Button { Text = "Thêm", AutoSize = true };
         var btnSua = new Button { Text = "Sửa", AutoSize = true };
         var btnXoa = new Button { Text = "Xóa", AutoSize = true };
+        var btnNhapExcel = new Button { Name = "btnNhapExcelThuoc", Text = "Nhập Excel", AutoSize = true };
+        var btnMauExcel = new Button { Name = "btnMauExcelThuoc", Text = "Tạo mẫu Excel", AutoSize = true };
         btnMoi.Click += (_, _) => ChuanBiThem(true);
         btnThem.Click += (_, _) => Them();
         btnSua.Click += (_, _) => Sua();
         btnXoa.Click += (_, _) => Xoa();
-        thanhNut.Controls.AddRange([btnMoi, btnThem, btnSua, btnXoa]);
+        btnNhapExcel.Click += (_, _) => NhapExcel();
+        btnMauExcel.Click += (_, _) => TaoMauExcel();
+        thanhNut.Controls.AddRange([btnMoi, btnThem, btnSua, btnXoa, btnNhapExcel, btnMauExcel]);
 
         lvThuoc.Dock = DockStyle.Fill;
         lvThuoc.View = View.Details;
@@ -248,6 +252,36 @@ public sealed class frmThuoc : Form
         {
             BaoLoi(ex);
         }
+    }
+
+    private void NhapExcel()
+    {
+        using var chonFile = new OpenFileDialog
+        {
+            Title = "Nhập danh mục thuốc từ Excel (tồn ban đầu 0)",
+            Filter = "Excel Workbook (*.xlsx)|*.xlsx",
+            CheckFileExists = true
+        };
+        if (chonFile.ShowDialog(this) != DialogResult.OK) return;
+        if (MessageBox.Show("Thêm các thuốc mới từ file đã chọn? Mã được tự tạo, tồn ban đầu là 0. " +
+            "Nếu có dòng sai hoặc trùng, toàn bộ file sẽ không được lưu.", "Nhập thuốc từ Excel",
+            MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes) return;
+        UseWaitCursor = true;
+        try { HienThiKetQua(bus.NhapTuExcel(chonFile.FileName)); }
+        finally { UseWaitCursor = false; }
+    }
+
+    private void TaoMauExcel()
+    {
+        using var chonFile = new SaveFileDialog
+        {
+            Title = "Tạo file mẫu nhập thuốc", FileName = "MauNhapThuoc.xlsx",
+            Filter = "Excel Workbook (*.xlsx)|*.xlsx", DefaultExt = "xlsx", AddExtension = true
+        };
+        if (chonFile.ShowDialog(this) != DialogResult.OK) return;
+        KetQua ketQua = bus.TaoMauExcel(chonFile.FileName);
+        MessageBox.Show(ketQua.ThongBao, "Mẫu nhập thuốc", MessageBoxButtons.OK,
+            ketQua.ThanhCong ? MessageBoxIcon.Information : MessageBoxIcon.Warning);
     }
 
     private void HienThiKetQua(KetQua ketQua)
