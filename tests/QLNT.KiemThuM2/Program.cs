@@ -58,6 +58,7 @@ internal static partial class Program
             if (Convert.ToString(new MyConnection().LayGiaTri("SELECT DB_NAME()")) != database)
                 throw new InvalidOperationException("Ket noi khong tro dung database kiem thu; dung truoc moi lenh ghi.");
             TaoDuLieuKiemThu();
+            KiemTraHoaDon();
             KiemTraBUSVaGiaoDich();
             KiemTraSuaXoa();
             KiemTraExcel();
@@ -107,6 +108,44 @@ internal static partial class Program
                 DONGIA DECIMAL(18,2) NOT NULL CHECK (DONGIA > 0),
                 SOLUONG INT NOT NULL DEFAULT 0 CHECK (SOLUONG >= 0),
                 MALOAI VARCHAR(10) NOT NULL REFERENCES LOAITHUOC(MALOAI));
+            CREATE TABLE KHACHHANG (
+                MAKH VARCHAR(10) PRIMARY KEY, HOTEN NVARCHAR(100) NOT NULL,
+                SDT VARCHAR(15), DIACHI NVARCHAR(200));
+            CREATE TABLE CTKHUYENMAI (
+                MACTKM VARCHAR(10) PRIMARY KEY, TENCTKM NVARCHAR(100) NOT NULL,
+                NGAYBATDAU DATE, NGAYKETTHUC DATE);
+            CREATE TABLE KM_SANPHAM (
+                MACTKM VARCHAR(10) NOT NULL REFERENCES CTKHUYENMAI(MACTKM),
+                MATHUOC VARCHAR(10) NOT NULL REFERENCES THUOC(MATHUOC),
+                PHANTRAMGIAM DECIMAL(5,2) NOT NULL,
+                PRIMARY KEY (MACTKM, MATHUOC));
+            CREATE TABLE KM_VOUCHER (
+                MAVOUCHER VARCHAR(20) PRIMARY KEY,
+                MACTKM VARCHAR(10) NOT NULL REFERENCES CTKHUYENMAI(MACTKM),
+                MAKH VARCHAR(10) REFERENCES KHACHHANG(MAKH),
+                PHANTRAMGIAM DECIMAL(5,2) NOT NULL);
+            CREATE TABLE KM_HOADON (
+                MACTKM VARCHAR(10) NOT NULL REFERENCES CTKHUYENMAI(MACTKM),
+                MUCTIENHD DECIMAL(18,2) NOT NULL,
+                PHANTRAMGIAM DECIMAL(5,2) NOT NULL,
+                PRIMARY KEY (MACTKM, MUCTIENHD));
+            CREATE TABLE HOADON (
+                MAHD VARCHAR(10) PRIMARY KEY,
+                MANV VARCHAR(10) NOT NULL REFERENCES NHANVIEN(MANV),
+                NGAYLAP DATE NOT NULL,
+                TONGTIEN DECIMAL(18,2) NOT NULL CHECK (TONGTIEN >= 0),
+                MAKH VARCHAR(10) REFERENCES KHACHHANG(MAKH),
+                MAVOUCHER VARCHAR(20) REFERENCES KM_VOUCHER(MAVOUCHER),
+                MACTKM_HD VARCHAR(10) REFERENCES CTKHUYENMAI(MACTKM),
+                MUCTIENHD DECIMAL(18,2),
+                TIENGIAM DECIMAL(18,2) NOT NULL DEFAULT 0 CHECK (TIENGIAM >= 0));
+            CREATE TABLE CTHD (
+                MAHD VARCHAR(10) NOT NULL REFERENCES HOADON(MAHD),
+                MATHUOC VARCHAR(10) NOT NULL REFERENCES THUOC(MATHUOC),
+                SOLUONG INT NOT NULL CHECK (SOLUONG > 0),
+                DONGIA DECIMAL(18,2) NOT NULL CHECK (DONGIA >= 0),
+                THANHTIEN DECIMAL(18,2) NOT NULL CHECK (THANHTIEN >= 0),
+                PRIMARY KEY (MAHD, MATHUOC));
             CREATE TABLE PHIEUNHAP (
                 MAPN VARCHAR(10) PRIMARY KEY,
                 MANCC VARCHAR(10) NOT NULL REFERENCES NHACUNGCAP(MANCC),
@@ -127,6 +166,19 @@ internal static partial class Program
                 ('TH0002', N'B thuoc test', NULL, 200, 0, 'LT0001'),
                 ('TH0003', N'C thuoc test', NULL, 300, 2147483647, 'LT0001'),
                 ('TH0004', N'D thuoc test', NULL, 400, 0, 'LT0001');
+            INSERT INTO KHACHHANG VALUES ('KH0001', N'Khach hang test', NULL, NULL);
+            INSERT INTO CTKHUYENMAI VALUES
+                ('KM0001', N'Khuyen mai test', '2000-01-01', '2099-12-31'),
+                ('KM0002', N'Chi giam san pham', '2000-01-01', '2099-12-31'),
+                ('KM0003', N'Chi voucher', '2000-01-01', '2099-12-31'),
+                ('KM0004', N'Chi giam hoa don', '2099-01-01', '2099-12-31');
+            INSERT INTO KM_SANPHAM VALUES ('KM0001', 'TH0001', 10);
+            INSERT INTO KM_SANPHAM VALUES ('KM0002', 'TH0004', 10);
+            INSERT INTO KM_HOADON VALUES ('KM0001', 500, 5);
+            INSERT INTO KM_HOADON VALUES ('KM0004', 100, 5);
+            INSERT INTO KM_VOUCHER VALUES ('VC0001', 'KM0001', 'KH0001', 15);
+            INSERT INTO KM_VOUCHER VALUES ('VC0002', 'KM0003', 'KH0001', 10);
+            UPDATE THUOC SET SOLUONG = 20 WHERE MATHUOC = 'TH0002';
             """);
     }
 

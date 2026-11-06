@@ -23,6 +23,7 @@ public class CTKhuyenMaiBUS
                 row["MACTKM"].ToString() ?? "",
                 row["TENCTKM"].ToString() ?? "",
                 bd, kt));
+            ((CTKhuyenMai)ds[ds.Count - 1]!).TheLoai = row["THELOAI"].ToString() ?? "Chưa cấu hình";
         }
 
         danhSachCTKM = ds;
@@ -131,7 +132,8 @@ public class CTKhuyenMaiBUS
         foreach (CTKhuyenMai km in LayTatCa())
         {
             if (km.MaCTKM.ToLower().Contains(tuKhoaChuan) ||
-                km.TenCTKM.ToLower().Contains(tuKhoaChuan))
+                km.TenCTKM.ToLower().Contains(tuKhoaChuan) ||
+                km.TheLoai.Contains(tuKhoaChuan, StringComparison.OrdinalIgnoreCase))
             {
                 ketQua.Add(km);
             }

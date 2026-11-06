@@ -58,13 +58,15 @@ public sealed class frmHoaDon : Form
         var btnLap = GiaoDienChung.TaoNutPhu("Lập hóa đơn");
         var btnSua = GiaoDienChung.TaoNutPhu("Sửa hóa đơn");
         var btnHuy = GiaoDienChung.TaoNutPhu("Hủy hóa đơn / hoàn tồn");
-        var btnIn = GiaoDienChung.TaoNutPhu("In / xuất PDF");
+        var btnIn = GiaoDienChung.TaoNutPhu("In hóa đơn");
+        var btnPdf = GiaoDienChung.TaoNutPhu("Xuất PDF");
         btnTaiLai.Click += (_, _) => TaiDanhSach();
         btnLap.Click += (_, _) => LapHoaDonNhap();
         btnSua.Click += (_, _) => SuaHoaDon();
         btnHuy.Click += (_, _) => HuyHoaDon();
         btnIn.Click += (_, _) => InHoaDon();
-        congCu.Controls.AddRange([nhanTim, txtTimKiem, btnTaiLai, btnLap, btnSua, btnHuy, btnIn]);
+        btnPdf.Click += (_, _) => XuatPdfHoaDon();
+        congCu.Controls.AddRange([nhanTim, txtTimKiem, btnTaiLai, btnLap, btnSua, btnHuy, btnIn, btnPdf]);
         return congCu;
     }
 
@@ -294,7 +296,7 @@ public sealed class frmHoaDon : Form
     {
         if (lvHoaDon.SelectedItems.Count == 0)
         {
-            MessageBox.Show("Hãy chọn hóa đơn cần in hoặc xuất PDF.");
+            MessageBox.Show("Hãy chọn hóa đơn cần in.");
             return;
         }
 
@@ -323,5 +325,24 @@ public sealed class frmHoaDon : Form
         }
 
         HoaDonIn.In(this, hoaDon, cacDong);
+    }
+    private void XuatPdfHoaDon()
+    {
+        if (lvHoaDon.SelectedItems.Count == 0 || lvHoaDon.SelectedItems[0].Tag is not HoaDon hoaDon)
+        {
+            MessageBox.Show("Hãy chọn hóa đơn cần xuất PDF.");
+            return;
+        }
+
+        try
+        {
+            List<CTHoaDon> cacDong = bus.LayChiTiet(hoaDon.MaHD).Cast<CTHoaDon>().ToList();
+            HoaDonIn.XuatPdf(this, hoaDon, cacDong);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Không thể tải dữ liệu để xuất PDF: {ex.Message}",
+                "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
     }
 }

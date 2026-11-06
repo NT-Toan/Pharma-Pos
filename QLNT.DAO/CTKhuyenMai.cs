@@ -4,6 +4,7 @@ public class CTKhuyenMai
 {
     public string MaCTKM { get; set; } = string.Empty;
     public string TenCTKM { get; set; } = string.Empty;
+    public string TheLoai { get; set; } = "Chưa cấu hình";
     public DateTime? NgayBatDau { get; set; }
     public DateTime? NgayKetThuc { get; set; }
 

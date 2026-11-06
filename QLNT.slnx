@@ -1,4 +1,7 @@
 <Solution>
+  <Folder Name="/tests/">
+    <Project Path="tests/QLNT.KiemThuM2/QLNT.KiemThuM2.csproj" />
+  </Folder>
   <Project Path="QLNT.BUS/QLNT.BUS.csproj" />
   <Project Path="QLNT.DAO/QLNT.DAO.csproj" />
   <Project Path="QLNT.GUI/QLNT.GUI.csproj" />

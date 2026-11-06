@@ -8,7 +8,31 @@ public class KhuyenMaiDAO
     // ================= CTKHUYENMAI =================
     public DataTable LayTatCaCTKM()
     {
-        return conn.LayBang("SELECT MACTKM, TENCTKM, NGAYBATDAU, NGAYKETTHUC FROM CTKHUYENMAI");
+        const string sql = """
+            SELECT km.MACTKM, km.TENCTKM, km.NGAYBATDAU, km.NGAYKETTHUC,
+                COALESCE(NULLIF(
+                    STUFF((
+                        SELECT N', ' + loai.TEN
+                        FROM (VALUES
+                            (1, N'KMHoaDon'),
+                            (2, N'KMSanPham'),
+                            (3, N'KMVoucher')
+                        ) AS loai(THU_TU, TEN)
+                        WHERE
+                            (loai.THU_TU = 1 AND EXISTS (
+                                SELECT 1 FROM KM_HOADON hd WHERE hd.MACTKM = km.MACTKM))
+                            OR (loai.THU_TU = 2 AND EXISTS (
+                                SELECT 1 FROM KM_SANPHAM sp WHERE sp.MACTKM = km.MACTKM))
+                            OR (loai.THU_TU = 3 AND EXISTS (
+                                SELECT 1 FROM KM_VOUCHER vc WHERE vc.MACTKM = km.MACTKM))
+                        ORDER BY loai.THU_TU
+                        FOR XML PATH(''), TYPE
+                    ).value('.', 'nvarchar(max)'), 1, 2, N''),
+                    N''), N'Chưa cấu hình') AS THELOAI
+            FROM CTKHUYENMAI km
+            ORDER BY km.MACTKM
+            """;
+        return conn.LayBang(sql);
     }
 
     public int ThemCTKM(CTKhuyenMai km)

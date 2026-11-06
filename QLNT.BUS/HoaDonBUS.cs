@@ -165,6 +165,7 @@ public class HoaDonBUS
             tongGoc - tongSauGiamSanPham,
             tongSauGiamSanPham,
             tienGiamHoaDon,
+            dungVoucher ? phanTramVoucher : mocApDung?.PhanTramGiam ?? 0,
             tongTien,
             dungVoucher ? maVoucherChuan : null,
             !dungVoucher ? mocApDung?.MaCTKM : null,
@@ -327,6 +328,7 @@ public sealed class KetQuaTinhHoaDon
     public decimal TienGiamSanPham { get; private init; }
     public decimal TongTienHang { get; private init; }
     public decimal TienGiamHoaDon { get; private init; }
+    public decimal PhanTramGiamHoaDon { get; private init; }
     public decimal TongTien { get; private init; }
     public string? MaVoucher { get; private init; }
     public string? MaCTKMHD { get; private init; }
@@ -339,6 +341,7 @@ public sealed class KetQuaTinhHoaDon
         decimal tienGiamSanPham,
         decimal tongTienHang,
         decimal tienGiamHoaDon,
+        decimal phanTramGiamHoaDon,
         decimal tongTien,
         string? maVoucher,
         string? maCTKMHD,
@@ -349,6 +352,7 @@ public sealed class KetQuaTinhHoaDon
             TienGiamSanPham = tienGiamSanPham,
             TongTienHang = tongTienHang,
             TienGiamHoaDon = tienGiamHoaDon,
+            PhanTramGiamHoaDon = phanTramGiamHoaDon,
             TongTien = tongTien,
             MaVoucher = maVoucher,
             MaCTKMHD = maCTKMHD,

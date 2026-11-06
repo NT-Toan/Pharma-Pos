@@ -123,7 +123,7 @@ public sealed class frmKhuyenMai : Form
         thanhTimKiem.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
 
         txtTimKiem.Dock = DockStyle.Fill;
-        txtTimKiem.PlaceholderText = "Nhập mã hoặc tên chương trình khuyến mãi để tìm...";
+        txtTimKiem.PlaceholderText = "Nhập mã, tên hoặc thể loại khuyến mãi để tìm...";
         txtTimKiem.TextChanged += (_, _) => TimKiem();
 
         var btnTaiLai = GiaoDienChung.TaoNutPhu("Tải lại");
@@ -141,6 +141,7 @@ public sealed class frmKhuyenMai : Form
         lvKhuyenMai.HideSelection = false;
         lvKhuyenMai.Columns.Add("Mã CTKM", 120);
         lvKhuyenMai.Columns.Add("Tên chương trình khuyến mãi", 320);
+        lvKhuyenMai.Columns.Add("Thể Loại Khuyến Mãi", 210);
         lvKhuyenMai.Columns.Add("Ngày bắt đầu", 160);
         lvKhuyenMai.Columns.Add("Ngày kết thúc", 160);
         lvKhuyenMai.SelectedIndexChanged += (_, _) => ChonDong();
@@ -287,6 +288,7 @@ public sealed class frmKhuyenMai : Form
                 {
                     km.MaCTKM,
                     km.TenCTKM,
+                    km.TheLoai,
                     ngayBD,
                     ngayKT
                 })
