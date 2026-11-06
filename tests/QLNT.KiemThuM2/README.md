@@ -14,7 +14,7 @@ Chương trình luôn tự đặt `QLNT_DATABASE` thành `QLNT_Test_PN_` + GUID,
 
 Phần hóa đơn tạo dữ liệu khách hàng, khuyến mãi sản phẩm, mốc giảm và voucher trong database riêng; kiểm tra tạo/sửa/hủy, đối soát `HOADON` với `CTHD`, số tiền giảm và tồn kho. Phần này cũng xuất PDF thật qua máy in Windows **Microsoft Print to PDF** và xác nhận chữ ký tệp. Không ghi hóa đơn vào database ứng dụng.
 
-Lần chạy ngày 06/11/2026: **149 kiểm tra đạt**, exit code 0; database kiểm thử riêng được xác minh rồi xóa. Trong đó có kiểm thử PDF thật qua Microsoft Print to PDF, loại CTKM trên hóa đơn và cột/lọc thể loại CTKM trên trang Khuyến mãi. Mỗi dòng `PASS` là một xác nhận tự động; không có nghĩa đã thử thủ công 149 quy trình giao diện khác nhau.
+Kiểm thử hóa đơn và trang Khuyến mãi bao gồm đối soát CTHD/HOADON/tồn kho, xuất PDF thật, và hiển thị/lọc thể loại khuyến mãi. Lần chạy ngày 06/11/2026: **149 kiểm tra đạt**, exit code 0; database kiểm thử riêng được xác minh rồi xóa. Mỗi dòng `PASS` là một xác nhận tự động; không có nghĩa đã thử thủ công 149 quy trình giao diện khác nhau.
 
 Sau khi đổi tên và trạng thái nút soạn phiếu, đã chạy riêng **14/14 kiểm tra bản nháp**, exit code 0. Chạy riêng phần này không kết nối SQL:
 

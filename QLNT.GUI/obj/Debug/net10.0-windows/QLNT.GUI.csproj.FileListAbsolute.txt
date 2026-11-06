@@ -67,3 +67,9 @@ D:\Pharma-Pos-main\test-output\Debug\net10.0-windows\QLNT.GUI.deps.json
 D:\Pharma-Pos-main\test-output\Debug\net10.0-windows\QLNT.GUI.runtimeconfig.json
 D:\Pharma-Pos-main\test-output\Debug\net10.0-windows\QLNT.GUI.dll
 D:\Pharma-Pos-main\test-output\Debug\net10.0-windows\QLNT.GUI.pdb
+D:\Pharma-Pos-main\diagnostic-output\Debug\net10.0-windows\QLNT.GUI.exe
+D:\Pharma-Pos-main\diagnostic-output\Debug\net10.0-windows\QLNT.GUI.deps.json
+D:\Pharma-Pos-main\diagnostic-output\Debug\net10.0-windows\QLNT.GUI.runtimeconfig.json
+D:\Pharma-Pos-main\diagnostic-output\Debug\net10.0-windows\QLNT.GUI.dll
+D:\Pharma-Pos-main\diagnostic-output\Debug\net10.0-windows\QLNT.GUI.pdb
+D:\Pharma-Pos-main\QLNT.GUI\obj\Debug\net10.0-windows\QLNT.GUI.sourcelink.json

@@ -326,7 +326,6 @@ public sealed class frmHoaDon : Form
 
         HoaDonIn.In(this, hoaDon, cacDong);
     }
-
     private void XuatPdfHoaDon()
     {
         if (lvHoaDon.SelectedItems.Count == 0 || lvHoaDon.SelectedItems[0].Tag is not HoaDon hoaDon)

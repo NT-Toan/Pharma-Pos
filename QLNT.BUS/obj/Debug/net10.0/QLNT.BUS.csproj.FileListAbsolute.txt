@@ -16,3 +16,7 @@ D:\Pharma-Pos-main\QLNT.BUS\obj\Debug\net10.0\ref\QLNT.BUS.dll
 D:\Pharma-Pos-main\test-output\Debug\net10.0\QLNT.BUS.deps.json
 D:\Pharma-Pos-main\test-output\Debug\net10.0\QLNT.BUS.dll
 D:\Pharma-Pos-main\test-output\Debug\net10.0\QLNT.BUS.pdb
+D:\Pharma-Pos-main\diagnostic-output\Debug\net10.0\QLNT.BUS.deps.json
+D:\Pharma-Pos-main\diagnostic-output\Debug\net10.0\QLNT.BUS.dll
+D:\Pharma-Pos-main\diagnostic-output\Debug\net10.0\QLNT.BUS.pdb
+D:\Pharma-Pos-main\QLNT.BUS\obj\Debug\net10.0\QLNT.BUS.sourcelink.json
