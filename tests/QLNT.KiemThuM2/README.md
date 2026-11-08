@@ -1,4 +1,4 @@
-# Kiểm thử M2
+# Kiểm thử tích hợp M2–M4
 
 Project console chạy trên Windows, tham chiếu project GUI/BUS/DAO thật. Chạy từ thư mục gốc repo:
 
@@ -14,7 +14,13 @@ Chương trình luôn tự đặt `QLNT_DATABASE` thành `QLNT_Test_PN_` + GUID,
 
 Phần hóa đơn tạo dữ liệu khách hàng, khuyến mãi sản phẩm, mốc giảm và voucher trong database riêng; kiểm tra tạo/sửa/hủy, đối soát `HOADON` với `CTHD`, số tiền giảm và tồn kho. Phần này cũng xuất PDF thật qua máy in Windows **Microsoft Print to PDF** và xác nhận chữ ký tệp. Không ghi hóa đơn vào database ứng dụng.
 
-Kiểm thử hóa đơn và trang Khuyến mãi bao gồm đối soát CTHD/HOADON/tồn kho, xuất PDF thật, và hiển thị/lọc thể loại khuyến mãi. Lần chạy ngày 06/11/2026: **149 kiểm tra đạt**, exit code 0; database kiểm thử riêng được xác minh rồi xóa. Mỗi dòng `PASS` là một xác nhận tự động; không có nghĩa đã thử thủ công 149 quy trình giao diện khác nhau.
+Kiểm thử hóa đơn và trang Khuyến mãi bao gồm đối soát CTHD/HOADON/tồn kho, xuất PDF thật, và hiển thị/lọc thể loại khuyến mãi. Lần chạy ngày 08/11/2026: **161 kiểm tra đạt**, exit code 0; database kiểm thử riêng được xác minh rồi xóa. Các ca mới đối chiếu thống kê tháng/quý/năm, doanh thu theo nhân viên/khách hàng/sản phẩm, xuất báo cáo `.xlsx`, chặn cột tổng sản phẩm lấy nhầm hóa đơn ngoài năm chọn và bấm nút sửa/lưu trên form Phiếu nhập, Hóa đơn. Mỗi dòng `PASS` là một xác nhận tự động; không có nghĩa đã thử thủ công 161 quy trình giao diện khác nhau.
+
+Kiểm tra riêng thao tác bấm **Sửa → Lưu** trên hai form với database thử:
+
+```powershell
+dotnet run --project tests/QLNT.KiemThuM2/QLNT.KiemThuM2.csproj -- --ui-edit-only
+```
 
 Sau khi đổi tên và trạng thái nút soạn phiếu, đã chạy riêng **14/14 kiểm tra bản nháp**, exit code 0. Chạy riêng phần này không kết nối SQL:
 
@@ -22,7 +28,7 @@ Sau khi đổi tên và trạng thái nút soạn phiếu, đã chạy riêng **
 dotnet run --project tests/QLNT.KiemThuM2/QLNT.KiemThuM2.csproj -- --draft-only
 ```
 
-[DraftCases.cs](./DraftCases.cs) bấm nút thật trên điều khiển WinForms ẩn để thử thêm, cập nhật, bỏ thuốc, nhập mới, tổng tiền và dữ liệu được giữ lại. Kết quả hộp thoại chọn thuốc được thay bằng đối tượng giả; không chạy Load/Lưu phiếu. Bộ chạy đầy đủ hiện bao gồm cả 14 kiểm tra này; chưa chạy lại toàn bộ sau cập nhật UX.
+[DraftCases.cs](./DraftCases.cs) bấm nút thật trên điều khiển WinForms ẩn để thử thêm, cập nhật, bỏ thuốc, nhập mới, tổng tiền và dữ liệu được giữ lại. Kết quả hộp thoại chọn thuốc được thay bằng đối tượng giả; không chạy Load/Lưu phiếu. Bộ chạy đầy đủ hiện bao gồm cả 14 kiểm tra này và đã được chạy lại sau cập nhật UX.
 
 Chỉ kiểm tra lỗi chọn/đổi thuốc, không kết nối SQL:
 

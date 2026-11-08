@@ -58,6 +58,12 @@ internal static partial class Program
             if (Convert.ToString(new MyConnection().LayGiaTri("SELECT DB_NAME()")) != database)
                 throw new InvalidOperationException("Ket noi khong tro dung database kiem thu; dung truoc moi lenh ghi.");
             TaoDuLieuKiemThu();
+            if (args.Contains("--ui-edit-only"))
+            {
+                KiemTraSuaLuuTrenForm();
+                Console.WriteLine($"PASS UI EDIT: {soCa} ca; database ung dung khong bi ghi du lieu.");
+                return 0;
+            }
             KiemTraHoaDon();
             KiemTraBUSVaGiaoDich();
             KiemTraSuaXoa();
@@ -65,6 +71,7 @@ internal static partial class Program
             KiemTraForm();
             KiemTraChuyenThuoc();
             KiemTraSoanPhieu();
+            KiemTraSuaLuuTrenForm();
             Console.WriteLine($"PASS ALL: {soCa} ca; database ung dung khong bi ghi du lieu.");
             return 0;
         }
