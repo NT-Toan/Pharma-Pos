@@ -14,12 +14,18 @@ internal static partial class Program
     private static int Main(string[] args)
     {
         Application.SetUnhandledExceptionMode(UnhandledExceptionMode.ThrowException);
-        if (args.Contains("--picker-only") || args.Contains("--draft-only"))
+        if (args.Contains("--picker-only") || args.Contains("--draft-only") ||
+            args.Contains("--customer-filter-only") || args.Contains("--customer-picker-only") ||
+            args.Contains("--invoice-layout-only") || args.Contains("--employee-picker-only"))
         {
             try
             {
                 Application.EnableVisualStyles();
-                if (args.Contains("--draft-only")) KiemTraSoanPhieu();
+                if (args.Contains("--employee-picker-only")) KiemTraChonNhanVienStatic();
+                else if (args.Contains("--invoice-layout-only")) KiemTraBoCucTongTienHoaDon();
+                else if (args.Contains("--customer-picker-only")) KiemTraChonKhachHangStatic();
+                else if (args.Contains("--customer-filter-only")) KiemTraLocDiaChiKhachHang();
+                else if (args.Contains("--draft-only")) KiemTraSoanPhieu();
                 else KiemTraChuyenThuoc();
                 Console.WriteLine($"PASS UI: {soCa} kiem tra; khong ket noi database.");
                 return 0;
@@ -72,6 +78,10 @@ internal static partial class Program
             KiemTraChuyenThuoc();
             KiemTraSoanPhieu();
             KiemTraSuaLuuTrenForm();
+            KiemTraLocDiaChiKhachHang();
+            KiemTraChonKhachHangStatic();
+            KiemTraChonNhanVienStatic();
+            KiemTraBoCucTongTienHoaDon();
             Console.WriteLine($"PASS ALL: {soCa} ca; database ung dung khong bi ghi du lieu.");
             return 0;
         }

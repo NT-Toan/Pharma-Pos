@@ -1,5 +1,3 @@
-using System.Collections;
-
 namespace QLNT.GUI;
 
 public sealed class frmChonNhanVien : Form
@@ -7,12 +5,11 @@ public sealed class frmChonNhanVien : Form
     private readonly NhanVienBUS bus = new();
     private readonly TextBox txtTimKiem = new() { Dock = DockStyle.Fill };
     private readonly ListView lvNhanVien = new();
-    private ArrayList? danhSachNhanVien;
-
-    public NhanVien? NhanVienDuocChon { get; private set; }
+    public static NhanVien? NhanVienDuocChon { get; private set; }
 
     public frmChonNhanVien()
     {
+        NhanVienDuocChon = null;
         Text = "Chọn nhân viên";
         StartPosition = FormStartPosition.CenterParent;
         MinimumSize = new Size(520, 360);
@@ -53,26 +50,23 @@ public sealed class frmChonNhanVien : Form
         Controls.Add(timKiem);
         Controls.Add(nut);
         Load += (_, _) => HienThiDanhSach();
+        FormClosed += (_, _) =>
+        {
+            if (DialogResult != DialogResult.OK)
+                NhanVienDuocChon = null;
+        };
     }
 
     private void HienThiDanhSach()
     {
         try
         {
-            danhSachNhanVien ??= bus.LayTatCa();
-            string tuKhoa = txtTimKiem.Text.Trim();
             lvNhanVien.BeginUpdate();
             try
             {
                 lvNhanVien.Items.Clear();
-                foreach (NhanVien nhanVien in danhSachNhanVien)
+                foreach (NhanVien nhanVien in bus.TimKiem(txtTimKiem.Text))
                 {
-                    if (tuKhoa.Length > 0 &&
-                        !nhanVien.MaNV.Contains(tuKhoa, StringComparison.OrdinalIgnoreCase) &&
-                        !nhanVien.HoTenNV.Contains(tuKhoa, StringComparison.OrdinalIgnoreCase) &&
-                        !nhanVien.ChucVu.Contains(tuKhoa, StringComparison.OrdinalIgnoreCase))
-                        continue;
-
                     var dong = new ListViewItem(nhanVien.MaNV) { Tag = nhanVien };
                     dong.SubItems.Add(nhanVien.HoTenNV);
                     dong.SubItems.Add(nhanVien.ChucVu);

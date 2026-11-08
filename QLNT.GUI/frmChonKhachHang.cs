@@ -1,5 +1,3 @@
-using System.Collections;
-
 namespace QLNT.GUI;
 
 public sealed class frmChonKhachHang : Form
@@ -7,13 +5,12 @@ public sealed class frmChonKhachHang : Form
     private readonly KhachHangBUS bus = new();
     private readonly TextBox txtTimKiem = new() { Dock = DockStyle.Fill };
     private readonly ListView lvKhachHang = new();
-    private ArrayList? danhSachKhachHang;
-
-    public KhachHang? KhachHangDuocChon { get; private set; }
+    public static KhachHang? KhachHangDuocChon { get; private set; }
     public bool ChonKhachLe { get; private set; }
 
     public frmChonKhachHang()
     {
+        KhachHangDuocChon = null;
         Text = "Chọn khách hàng";
         StartPosition = FormStartPosition.CenterParent;
         MinimumSize = new Size(560, 360);
@@ -57,6 +54,7 @@ public sealed class frmChonKhachHang : Form
         btnThem.Click += (_, _) => ThemKhachHang();
         btnKhachLe.Click += (_, _) =>
         {
+            KhachHangDuocChon = null;
             ChonKhachLe = true;
             DialogResult = DialogResult.OK;
             Close();
@@ -69,26 +67,23 @@ public sealed class frmChonKhachHang : Form
         Controls.Add(timKiem);
         Controls.Add(nut);
         Load += (_, _) => HienThiDanhSach();
+        FormClosed += (_, _) =>
+        {
+            if (DialogResult != DialogResult.OK)
+                KhachHangDuocChon = null;
+        };
     }
 
     private void HienThiDanhSach()
     {
         try
         {
-            danhSachKhachHang ??= bus.LayTatCa();
-            string tuKhoa = txtTimKiem.Text.Trim();
             lvKhachHang.BeginUpdate();
             try
             {
                 lvKhachHang.Items.Clear();
-                foreach (KhachHang khachHang in danhSachKhachHang)
+                foreach (KhachHang khachHang in bus.TimKiem(txtTimKiem.Text))
                 {
-                    if (tuKhoa.Length > 0 &&
-                        !khachHang.MaKH.Contains(tuKhoa, StringComparison.OrdinalIgnoreCase) &&
-                        !khachHang.HoTen.Contains(tuKhoa, StringComparison.OrdinalIgnoreCase) &&
-                        !(khachHang.SDT?.Contains(tuKhoa, StringComparison.OrdinalIgnoreCase) ?? false))
-                        continue;
-
                     var dong = new ListViewItem(khachHang.MaKH) { Tag = khachHang };
                     dong.SubItems.Add(khachHang.HoTen);
                     dong.SubItems.Add(khachHang.SDT ?? string.Empty);
@@ -127,7 +122,6 @@ public sealed class frmChonKhachHang : Form
             return;
 
         txtTimKiem.Clear();
-        danhSachKhachHang = bus.LayTatCa();
         HienThiDanhSach();
         foreach (ListViewItem dong in lvKhachHang.Items)
         {
