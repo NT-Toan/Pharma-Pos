@@ -42,6 +42,42 @@ internal static partial class Program
         Check(Ton("TH0001") == 8 && Ton("TH0002") == 18,
             "Tao hoa don tru dung ton kho tung thuoc");
 
+        var thongKe = new QLNT.BUS.ThongKeBUS();
+        int nam = DateTime.Today.Year;
+        int thang = DateTime.Today.Month;
+        int quy = (thang - 1) / 3 + 1;
+        DataTable theoThang = thongKe.ThuChiTheoThang(nam);
+        DataTable theoQuy = thongKe.ThuChiTheoQuy(nam);
+        DataTable theoNam = thongKe.ThuChiTheoNam(nam, nam);
+        Check(Convert.ToDecimal(theoThang.Rows[thang - 1]["Thu"]) == 493m &&
+              Convert.ToDecimal(theoQuy.Rows[quy - 1]["Thu"]) == 493m &&
+              Convert.ToDecimal(theoNam.Rows[0]["Thu"]) == 493m,
+            "Thong ke thang quy nam khop tong hoa don da luu");
+        Check(Convert.ToDecimal(thongKe.TongTienTheoNhanVienQuy(nam).Rows.Cast<DataRow>()
+                  .Single(row => row["Ma"].ToString() == "TC")["TC"]) == 493m &&
+              Convert.ToDecimal(thongKe.TongTienTheoKhachHangQuy(nam).Rows.Cast<DataRow>()
+                  .Single(row => row["Ma"].ToString() == "TC")["TC"]) == 493m,
+            "Thong ke nhan vien va khach hang khop tong thanh toan");
+        Check(Convert.ToDecimal(thongKe.TongTienTheoSanPhamQuy(nam).Rows.Cast<DataRow>()
+                  .Single(row => row["Ma"].ToString() == "TC")["TC"]) == 580m,
+            "Thong ke san pham khop tong thanh tien tung dong truoc giam hoa don");
+
+        DataTable sanPhamNamTruoc = new QLNT.BUS.ThongKeBUS()
+            .TongTienTheoSanPhamQuy(DateTime.Today.Year - 1);
+        Check(sanPhamNamTruoc.Rows.Cast<DataRow>()
+                .All(row => Convert.ToDecimal(row["TC"]) == 0),
+            "Thong ke san pham khong cong hoa don ngoai nam duoc chon");
+
+        string duongDanBaoCao = Path.Combine(thuMucExcel, "thong-ke-quy-test.xlsx");
+        ExcelHelper.XuatBang(theoQuy, duongDanBaoCao);
+        using (var sachExcel = new ClosedXML.Excel.XLWorkbook(duongDanBaoCao))
+        {
+            var trang = sachExcel.Worksheet("Thống kê");
+            Check(trang.Cell(quy + 1, 1).GetString() == $"Q{quy}" &&
+                  trang.Cell(quy + 1, 2).GetValue<decimal>() == 493m,
+                "Xuat bao cao quy ra xlsx va doc lai dung so thu");
+        }
+
         HoaDon hoaDonIn = bus.LayTatCa().Cast<HoaDon>().Single(hoaDon => hoaDon.MaHD == tao.MaHD);
         string duongDanPdf = Path.Combine(thuMucExcel, "hoa-don-test.pdf");
         HoaDonIn.XuatPdf(duongDanPdf, hoaDonIn, dongDaLuu);
