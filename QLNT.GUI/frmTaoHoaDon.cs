@@ -25,7 +25,10 @@ public sealed class frmTaoHoaDon : Form
     private readonly Label lblLoaiKhuyenMaiHoaDon = new()
     {
         Name = "lblLoaiKhuyenMaiHoaDon",
-        AutoSize = true,
+        AutoSize = false,
+        AutoEllipsis = true,
+        Dock = DockStyle.Fill,
+        TextAlign = ContentAlignment.MiddleRight,
         Text = "Không áp dụng",
         ForeColor = GiaoDienChung.ChuPhu
     };
@@ -58,6 +61,7 @@ public sealed class frmTaoHoaDon : Form
             RowCount = 4,
             BackColor = GiaoDienChung.Nen
         };
+        khung.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         khung.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         khung.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         khung.RowStyles.Add(new RowStyle(SizeType.AutoSize));
@@ -168,7 +172,7 @@ public sealed class frmTaoHoaDon : Form
         var tongTien = new TableLayoutPanel
         {
             Dock = DockStyle.Top,
-            AutoSize = true,
+            Height = 300,
             ColumnCount = 2,
             RowCount = 8,
             Padding = new Padding(14),
@@ -220,10 +224,10 @@ public sealed class frmTaoHoaDon : Form
     private void ChonNhanVien()
     {
         using var form = new frmChonNhanVien();
-        if (form.ShowDialog(this) != DialogResult.OK || form.NhanVienDuocChon == null)
+        if (form.ShowDialog(this) != DialogResult.OK || frmChonNhanVien.NhanVienDuocChon == null)
             return;
 
-        nhanVien = form.NhanVienDuocChon;
+        nhanVien = frmChonNhanVien.NhanVienDuocChon;
         txtNhanVien.Text = $"{nhanVien.MaNV} - {nhanVien.HoTenNV}";
         TinhVaHienThi();
     }
@@ -234,7 +238,11 @@ public sealed class frmTaoHoaDon : Form
         if (form.ShowDialog(this) != DialogResult.OK)
             return;
 
-        khachHang = form.KhachHangDuocChon;
+        KhachHang? duocChon = frmChonKhachHang.KhachHangDuocChon;
+        if (!form.ChonKhachLe && duocChon == null)
+            return;
+
+        khachHang = duocChon;
         khachLe = form.ChonKhachLe;
         txtKhachHang.Text = khachLe ? "Khách lẻ" : $"{khachHang!.MaKH} - {khachHang.HoTen}";
         TinhVaHienThi();

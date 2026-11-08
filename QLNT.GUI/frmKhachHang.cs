@@ -35,7 +35,23 @@ public sealed class frmKhachHang : Form
         Dock = DockStyle.Fill
     };
 
-    private readonly ListView lvKhachHang = new();
+    private readonly TextBox txtLocDiaChi1 = new()
+    {
+        Name = "txtLocDiaChi1",
+        Dock = DockStyle.Fill,
+        PlaceholderText = "Ví dụ: TP HCM"
+    };
+
+    private readonly TextBox txtLocDiaChi2 = new()
+    {
+        Name = "txtLocDiaChi2",
+        Dock = DockStyle.Fill,
+        PlaceholderText = "Ví dụ: Hà Nội"
+    };
+
+    private bool dangLocDiaChi;
+
+    private readonly ListView lvKhachHang = new() { Name = "lvKhachHang" };
     private readonly Label lblSoLuong = new();
 
     public frmKhachHang()
@@ -51,9 +67,10 @@ public sealed class frmKhachHang : Form
             Dock = DockStyle.Fill,
             Padding = new Padding(12),
             ColumnCount = 1,
-            RowCount = 5
+            RowCount = 6
         };
         giaoDien.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        giaoDien.RowStyles.Add(new RowStyle(SizeType.Absolute, 50));
         giaoDien.RowStyles.Add(new RowStyle(SizeType.Absolute, 50));
         giaoDien.RowStyles.Add(new RowStyle(SizeType.Absolute, 100));
         giaoDien.RowStyles.Add(new RowStyle(SizeType.Absolute, 50));
@@ -77,7 +94,43 @@ public sealed class frmKhachHang : Form
         btnTaiLai.Click += (_, _) => TaiLaiDanhSach();
         thanhTim.Controls.Add(btnTaiLai, 2, 0);
 
-        txtTimKiem.TextChanged += (_, _) => TimKiem();
+        txtTimKiem.TextChanged += (_, _) =>
+        {
+            if (txtTimKiem.TextLength > 0)
+                dangLocDiaChi = false;
+            TimKiem();
+        };
+
+        var thanhLocDiaChi = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 6
+        };
+        thanhLocDiaChi.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+        thanhLocDiaChi.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
+        thanhLocDiaChi.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+        thanhLocDiaChi.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
+        thanhLocDiaChi.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+        thanhLocDiaChi.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+        thanhLocDiaChi.Controls.Add(TaoNhan("Địa chỉ chứa:"), 0, 0);
+        thanhLocDiaChi.Controls.Add(txtLocDiaChi1, 1, 0);
+        thanhLocDiaChi.Controls.Add(TaoNhan("HOẶC"), 2, 0);
+        thanhLocDiaChi.Controls.Add(txtLocDiaChi2, 3, 0);
+
+        var btnLocDiaChiOr = GiaoDienChung.TaoNutPhu("Lọc địa chỉ");
+        btnLocDiaChiOr.Name = "btnLocDiaChiOr";
+        btnLocDiaChiOr.Click += (_, _) => LocDiaChiOr();
+        thanhLocDiaChi.Controls.Add(btnLocDiaChiOr, 4, 0);
+
+        var btnBoLoc = GiaoDienChung.TaoNutPhu("Bỏ lọc");
+        btnBoLoc.Click += (_, _) =>
+        {
+            dangLocDiaChi = false;
+            txtLocDiaChi1.Clear();
+            txtLocDiaChi2.Clear();
+            TimKiem();
+        };
+        thanhLocDiaChi.Controls.Add(btnBoLoc, 5, 0);
 
         var bangNhap = new TableLayoutPanel
         {
@@ -131,10 +184,11 @@ public sealed class frmKhachHang : Form
         lblSoLuong.ForeColor = GiaoDienChung.ChuPhu;
 
         giaoDien.Controls.Add(thanhTim, 0, 0);
-        giaoDien.Controls.Add(bangNhap, 0, 1);
-        giaoDien.Controls.Add(thanhNut, 0, 2);
-        giaoDien.Controls.Add(lvKhachHang, 0, 3);
-        giaoDien.Controls.Add(lblSoLuong, 0, 4);
+        giaoDien.Controls.Add(thanhLocDiaChi, 0, 1);
+        giaoDien.Controls.Add(bangNhap, 0, 2);
+        giaoDien.Controls.Add(thanhNut, 0, 3);
+        giaoDien.Controls.Add(lvKhachHang, 0, 4);
+        giaoDien.Controls.Add(lblSoLuong, 0, 5);
         Controls.Add(giaoDien);
 
         Load += (_, _) =>
@@ -182,7 +236,7 @@ public sealed class frmKhachHang : Form
         try
         {
             KhachHangBUS.TaiLai();
-            HienThi(bus.TimKiem(txtTimKiem.Text));
+            HienThi(LayDanhSachDangXem());
         }
         catch (Exception ex)
         {
@@ -194,12 +248,54 @@ public sealed class frmKhachHang : Form
     {
         try
         {
-            HienThi(bus.TimKiem(txtTimKiem.Text));
+            HienThi(LayDanhSachDangXem());
         }
         catch (Exception ex)
         {
             MessageBox.Show(ex.Message, "Lỗi tìm kiếm");
         }
+    }
+
+    private ArrayList LayDanhSachDangXem()
+    {
+        if (!dangLocDiaChi)
+            return bus.TimKiem(txtTimKiem.Text);
+
+        var dieuKien = new List<DieuKien>();
+        if (!string.IsNullOrWhiteSpace(txtLocDiaChi1.Text))
+        {
+            dieuKien.Add(new DieuKien
+            {
+                TenTruong = nameof(KhachHang.DiaChi),
+                Phep = PhepSoSanh.Chua,
+                GiaTri = txtLocDiaChi1.Text.Trim()
+            });
+        }
+        if (!string.IsNullOrWhiteSpace(txtLocDiaChi2.Text))
+        {
+            dieuKien.Add(new DieuKien
+            {
+                TenTruong = nameof(KhachHang.DiaChi),
+                Phep = PhepSoSanh.Chua,
+                GiaTri = txtLocDiaChi2.Text.Trim()
+            });
+        }
+
+        return bus.TimKiemNangCao(dieuKien, PhepNoi.Or);
+    }
+
+    private void LocDiaChiOr()
+    {
+        if (string.IsNullOrWhiteSpace(txtLocDiaChi1.Text) &&
+            string.IsNullOrWhiteSpace(txtLocDiaChi2.Text))
+        {
+            MessageBox.Show("Nhập ít nhất một địa chỉ cần tìm.");
+            return;
+        }
+
+        txtTimKiem.Clear();
+        dangLocDiaChi = true;
+        TimKiem();
     }
 
     private void ChonDong()

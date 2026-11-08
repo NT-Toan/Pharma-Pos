@@ -210,7 +210,7 @@ public sealed class frmTaoPhieuNhap : Form
     private void ChonNhanVien()
     {
         using var form = new frmChonNhanVien();
-        if (form.ShowDialog(this) == DialogResult.OK && form.NhanVienDuocChon is NhanVien nv)
+        if (form.ShowDialog(this) == DialogResult.OK && frmChonNhanVien.NhanVienDuocChon is NhanVien nv)
         {
             nhanVien = nv;
             txtNhanVien.Text = $"{nv.MaNV} - {nv.HoTenNV}";
