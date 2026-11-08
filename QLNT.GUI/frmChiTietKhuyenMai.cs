@@ -257,7 +257,7 @@ public sealed class frmChiTietKhuyenMai : Form
         };
         tbl.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 120));
         tbl.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
-        tbl.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 130));
+        tbl.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 150));
         tbl.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
         tbl.RowStyles.Add(new RowStyle(SizeType.Absolute, 40));
         tbl.RowStyles.Add(new RowStyle(SizeType.Absolute, 40));

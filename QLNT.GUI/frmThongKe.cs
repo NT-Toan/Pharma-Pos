@@ -11,45 +11,58 @@ public sealed class frmThongKe : Form
     private readonly ThongKeBUS bus = new();
     private readonly ComboBox cboLoaiThongKe = new();
     private readonly NumericUpDown nudNam = new();
+    private readonly DateTimePicker dtpTuNgay = new();
+    private readonly DateTimePicker dtpDenNgay = new();
+    private readonly Label lblTongThuKy = new();
+    private readonly Label lblTongChiKy = new();
+    private readonly Label lblLoiNhuanKy = new();
+    private readonly Label lblTongThuTuyChon = new();
+    private readonly Label lblTongChiTuyChon = new();
+    private readonly Label lblLoiNhuanTuyChon = new();
+    private readonly Label lblTrangThai = new();
     private readonly DataGridView dgvDuLieu = new();
-    private readonly Label lblTongThu = new();
-    private readonly Label lblTongChi = new();
-    private readonly Label lblLoiNhuan = new();
     private DataTable? bangHienTai;
 
     public frmThongKe()
     {
         Text = "Thống kê doanh thu và báo cáo";
         StartPosition = FormStartPosition.CenterScreen;
-        MinimumSize = new Size(950, 600);
-        Size = new Size(1000, 650);
+        MinimumSize = new Size(880, 580);
+        Size = new Size(1000, 680);
         Font = GiaoDienChung.PhongChu;
         BackColor = GiaoDienChung.Nen;
 
-        var pnlDieuKien = new Panel
+        var pnlTop = new Panel
         {
             Dock = DockStyle.Top,
-            Height = 110,
+            AutoSize = true,
             Padding = new Padding(12)
         };
 
-        var tblFilter = new TableLayoutPanel
+        var grpBoLoc = new GroupBox
+        {
+            Text = "Điều kiện lọc & Báo cáo tổng hợp",
+            Dock = DockStyle.Top,
+            AutoSize = true,
+            Padding = new Padding(16, 12, 16, 14),
+            ForeColor = GiaoDienChung.Chu
+        };
+
+        var tblInput = new TableLayoutPanel
         {
             Dock = DockStyle.Top,
-            Height = 42,
-            ColumnCount = 6
+            AutoSize = true,
+            ColumnCount = 4,
+            RowCount = 2,
+            Padding = new Padding(0, 0, 0, 8)
         };
-        // Tăng chiều rộng nhãn lên 135px để không bị rớt chữ "kê"
-        tblFilter.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 135));
-        // Đặt cố định ô chọn loại thống kê 280px để thấy trọn vẹn chữ
-        tblFilter.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 280));
-        tblFilter.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 60));
-        tblFilter.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 85));
-        tblFilter.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 130));
-        tblFilter.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 130));
+        tblInput.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 110));
+        tblInput.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 55));
+        tblInput.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 90));
+        tblInput.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 45));
 
         cboLoaiThongKe.DropDownStyle = ComboBoxStyle.DropDownList;
-        // Đặt độ rộng menu thả xuống rộng rãi để không bao giờ bị cắt chữ
+        cboLoaiThongKe.Dock = DockStyle.Fill;
         cboLoaiThongKe.DropDownWidth = 320;
         cboLoaiThongKe.Items.AddRange(new object[]
         {
@@ -61,56 +74,85 @@ public sealed class frmThongKe : Form
             "Doanh thu theo Sản phẩm (theo Quý)"
         });
         cboLoaiThongKe.SelectedIndex = 1;
-        cboLoaiThongKe.SelectedIndexChanged += (_, _) => TaiBaoCao();
+        cboLoaiThongKe.SelectedIndexChanged += (_, _) => TaiBaoCaoBang();
 
         nudNam.Minimum = 2020;
         nudNam.Maximum = 2035;
         nudNam.Value = 2026;
-        nudNam.ValueChanged += (_, _) => TaiBaoCao();
+        nudNam.Dock = DockStyle.Fill;
+        nudNam.ValueChanged += (_, _) => TaiBaoCaoBang();
 
-        var btnXem = GiaoDienChung.TaoNutPhu("Cập Nhật");
-        btnXem.BackColor = GiaoDienChung.XanhChinh;
-        btnXem.ForeColor = Color.White;
-        btnXem.Click += (_, _) => TaiBaoCao();
+        tblInput.Controls.Add(new Label { Text = "Loại thống kê:", AutoSize = true, Anchor = AnchorStyles.Left, ForeColor = GiaoDienChung.Chu }, 0, 0);
+        tblInput.Controls.Add(cboLoaiThongKe, 1, 0);
+        tblInput.Controls.Add(new Label { Text = "Năm:", AutoSize = true, Anchor = AnchorStyles.Left, ForeColor = GiaoDienChung.Chu }, 2, 0);
+        tblInput.Controls.Add(nudNam, 3, 0);
+
+        dtpTuNgay.Format = DateTimePickerFormat.Short;
+        dtpTuNgay.Dock = DockStyle.Fill;
+        dtpTuNgay.Value = new DateTime(2026, 1, 1);
+
+        dtpDenNgay.Format = DateTimePickerFormat.Short;
+        dtpDenNgay.Dock = DockStyle.Fill;
+        dtpDenNgay.Value = DateTime.Today;
+
+        tblInput.Controls.Add(new Label { Text = "Từ ngày:", AutoSize = true, Anchor = AnchorStyles.Left, ForeColor = GiaoDienChung.Chu }, 0, 1);
+        tblInput.Controls.Add(dtpTuNgay, 1, 1);
+        tblInput.Controls.Add(new Label { Text = "Đến ngày:", AutoSize = true, Anchor = AnchorStyles.Left, ForeColor = GiaoDienChung.Chu }, 2, 1);
+        tblInput.Controls.Add(dtpDenNgay, 3, 1);
+
+        var pnlNut = new FlowLayoutPanel
+        {
+            Dock = DockStyle.Top,
+            Height = 42,
+            FlowDirection = FlowDirection.RightToLeft,
+            Padding = new Padding(0, 4, 0, 0)
+        };
 
         var btnXuatExcel = GiaoDienChung.TaoNutPhu("Xuất Excel");
         btnXuatExcel.Click += (_, _) => XuatExcel();
 
-        tblFilter.Controls.Add(new Label { Text = "Loại thống kê:", AutoSize = true, Anchor = AnchorStyles.Left, ForeColor = GiaoDienChung.Chu }, 0, 0);
-        tblFilter.Controls.Add(cboLoaiThongKe, 1, 0);
-        tblFilter.Controls.Add(new Label { Text = "Năm:", AutoSize = true, Anchor = AnchorStyles.Left, ForeColor = GiaoDienChung.Chu }, 2, 0);
-        tblFilter.Controls.Add(nudNam, 3, 0);
-        tblFilter.Controls.Add(btnXem, 4, 0);
-        tblFilter.Controls.Add(btnXuatExcel, 5, 0);
+        var btnXemNgay = GiaoDienChung.TaoNutPhu("Tính theo ngày");
+        btnXemNgay.Click += (_, _) => TinhTongHopTheoKhoangNgay();
 
-        var pnlTheTongHop = new FlowLayoutPanel
+        var btnXemBang = GiaoDienChung.TaoNutPhu("Cập nhật bảng");
+        btnXemBang.BackColor = GiaoDienChung.XanhChinh;
+        btnXemBang.ForeColor = Color.White;
+        btnXemBang.Click += (_, _) => TaiBaoCaoBang();
+
+        pnlNut.Controls.Add(btnXuatExcel);
+        pnlNut.Controls.Add(btnXemNgay);
+        pnlNut.Controls.Add(btnXemBang);
+
+        var pnlTongHop = new TableLayoutPanel
         {
-            Dock = DockStyle.Bottom,
-            Height = 44,
-            FlowDirection = FlowDirection.LeftToRight
+            Dock = DockStyle.Top,
+            AutoSize = true,
+            ColumnCount = 3,
+            RowCount = 2,
+            Padding = new Padding(0, 8, 0, 0)
         };
+        pnlTongHop.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 35));
+        pnlTongHop.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33));
+        pnlTongHop.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 32));
 
-        lblTongThu.AutoSize = true;
-        lblTongThu.Font = new Font(Font, FontStyle.Bold);
-        lblTongThu.ForeColor = Color.DarkGreen;
-        lblTongThu.Padding = new Padding(0, 10, 24, 0);
+        DinhDangTheTongHop(lblTongThuKy, Color.DarkGreen);
+        DinhDangTheTongHop(lblTongChiKy, Color.DarkRed);
+        DinhDangTheTongHop(lblLoiNhuanKy, Color.DarkBlue);
+        pnlTongHop.Controls.Add(lblTongThuKy, 0, 0);
+        pnlTongHop.Controls.Add(lblTongChiKy, 1, 0);
+        pnlTongHop.Controls.Add(lblLoiNhuanKy, 2, 0);
 
-        lblTongChi.AutoSize = true;
-        lblTongChi.Font = new Font(Font, FontStyle.Bold);
-        lblTongChi.ForeColor = Color.DarkRed;
-        lblTongChi.Padding = new Padding(0, 10, 24, 0);
+        DinhDangTheTongHop(lblTongThuTuyChon, Color.DarkGreen);
+        DinhDangTheTongHop(lblTongChiTuyChon, Color.DarkRed);
+        DinhDangTheTongHop(lblLoiNhuanTuyChon, Color.DarkBlue);
+        pnlTongHop.Controls.Add(lblTongThuTuyChon, 0, 1);
+        pnlTongHop.Controls.Add(lblTongChiTuyChon, 1, 1);
+        pnlTongHop.Controls.Add(lblLoiNhuanTuyChon, 2, 1);
 
-        lblLoiNhuan.AutoSize = true;
-        lblLoiNhuan.Font = new Font(Font, FontStyle.Bold);
-        lblLoiNhuan.ForeColor = Color.DarkBlue;
-        lblLoiNhuan.Padding = new Padding(0, 10, 0, 0);
-
-        pnlTheTongHop.Controls.Add(lblTongThu);
-        pnlTheTongHop.Controls.Add(lblTongChi);
-        pnlTheTongHop.Controls.Add(lblLoiNhuan);
-
-        pnlDieuKien.Controls.Add(tblFilter);
-        pnlDieuKien.Controls.Add(pnlTheTongHop);
+        grpBoLoc.Controls.Add(pnlTongHop);
+        grpBoLoc.Controls.Add(pnlNut);
+        grpBoLoc.Controls.Add(tblInput);
+        pnlTop.Controls.Add(grpBoLoc);
 
         dgvDuLieu.Dock = DockStyle.Fill;
         dgvDuLieu.ReadOnly = true;
@@ -119,13 +161,31 @@ public sealed class frmThongKe : Form
         dgvDuLieu.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
         dgvDuLieu.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
 
-        Controls.Add(dgvDuLieu);
-        Controls.Add(pnlDieuKien);
+        lblTrangThai.Dock = DockStyle.Bottom;
+        lblTrangThai.Height = 32;
+        lblTrangThai.Padding = new Padding(12, 8, 0, 0);
+        lblTrangThai.ForeColor = GiaoDienChung.ChuPhu;
 
-        Load += (_, _) => TaiBaoCao();
+        Controls.Add(dgvDuLieu);
+        Controls.Add(pnlTop);
+        Controls.Add(lblTrangThai);
+
+        Load += (_, _) =>
+        {
+            TaiBaoCaoBang();
+            TinhTongHopTheoKhoangNgay();
+        };
     }
 
-    private void TaiBaoCao()
+    private static void DinhDangTheTongHop(Label lbl, Color mau)
+    {
+        lbl.AutoSize = true;
+        lbl.Font = new Font(GiaoDienChung.PhongChu, FontStyle.Bold);
+        lbl.ForeColor = mau;
+        lbl.Padding = new Padding(0, 3, 8, 3);
+    }
+
+    private void TaiBaoCaoBang()
     {
         try
         {
@@ -161,13 +221,42 @@ public sealed class frmThongKe : Form
             decimal chi = bus.TongChi(tuDauNam, denCuoiNam);
             decimal loiNhuan = bus.LoiNhuan(tuDauNam, denCuoiNam);
 
-            lblTongThu.Text = $"Tổng thu năm {nam}: {thu:N0} đ";
-            lblTongChi.Text = $"Tổng chi năm {nam}: {chi:N0} đ";
-            lblLoiNhuan.Text = $"Lợi nhuận năm {nam}: {loiNhuan:N0} đ";
+            lblTongThuKy.Text = $"Thu năm {nam}: {thu:N0} đ";
+            lblTongChiKy.Text = $"Chi: {chi:N0} đ";
+            lblLoiNhuanKy.Text = $"Lợi nhuận: {loiNhuan:N0} đ";
+
+            lblTrangThai.Text = $"Số dòng dữ liệu: {bangHienTai?.Rows.Count ?? 0}";
         }
         catch (Exception ex)
         {
             MessageBox.Show($"Lỗi tải báo cáo: {ex.Message}", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+
+    private void TinhTongHopTheoKhoangNgay()
+    {
+        try
+        {
+            DateTime tuNgay = dtpTuNgay.Value.Date;
+            DateTime denNgay = dtpDenNgay.Value.Date;
+
+            if (denNgay < tuNgay)
+            {
+                MessageBox.Show("Đến ngày phải lớn hơn hoặc bằng Từ ngày.", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            decimal thu = bus.TongThu(tuNgay, denNgay);
+            decimal chi = bus.TongChi(tuNgay, denNgay);
+            decimal loiNhuan = bus.LoiNhuan(tuNgay, denNgay);
+
+            lblTongThuTuyChon.Text = $"Thu ({tuNgay:dd/MM} - {denNgay:dd/MM}): {thu:N0} đ";
+            lblTongChiTuyChon.Text = $"Chi: {chi:N0} đ";
+            lblLoiNhuanTuyChon.Text = $"Lợi nhuận: {loiNhuan:N0} đ";
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Lỗi tính tổng thu chi theo ngày: {ex.Message}", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
 
@@ -185,7 +274,7 @@ public sealed class frmThongKe : Form
         }
     }
 
-   private void XuatExcel()
+    private void XuatExcel()
     {
         if (bangHienTai == null || bangHienTai.Rows.Count == 0)
         {
