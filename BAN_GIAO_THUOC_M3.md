@@ -1,5 +1,7 @@
 # Bàn giao hàm Thuốc từ M2 cho M3
 
+Ngày cập nhật: **09/11/2026**. Bàn giao tổng hợp Phiếu nhập, tồn kho, Excel và kết quả kiểm thử: [Bàn giao M2 cho M3/M4](./BAN_GIAO_PHIEU_NHAP_M3_M4.md).
+
 ## 1. Mục đích và phạm vi
 
 M2 cung cấp phần lấy thông tin thuốc và kiểm tra điều kiện bán. M3 gọi các hàm này khi xây dựng Hóa đơn.
@@ -25,6 +27,8 @@ M3 cần lấy phần code đã ghép vào solution của nhóm để có đủ 
 | `Thuoc? LayTheoMa(string maThuoc)` | Mã thuốc, ví dụ `"TH0001"`. | Một đối tượng `Thuoc`; trả `null` nếu mã trống hoặc không tìm thấy. |
 | `KetQua KiemTraBan(string maThuoc, int soLuong, DateTime ngayBan)` | Mã thuốc, số lượng muốn bán và ngày bán. | `ThanhCong = true` nếu đạt; ngược lại `ThanhCong = false` và `ThongBao` nêu lỗi. |
 | `static void TaiLai()` | Không có. | Xóa cache; lần đọc tiếp theo mới lấy danh sách từ database. |
+| `ArrayList LayTatCa()` | Không có. | Danh sách thuốc trong cache, trả bản sao danh sách; đối tượng thuốc bên trong vẫn dùng chung. |
+| `ArrayList TimKiemNangCao(...)` | Mã, tên, mã loại, giá từ/đến, AND/OR. | Kết quả lọc trên `ArrayList`; cách gọi xem mục 3.4. |
 
 ### 3.1. Lấy thông tin thuốc
 
@@ -36,7 +40,7 @@ Thuoc? thuoc = thuocBUS.LayTheoMa("TH0001");
 Nếu `thuoc` khác `null`, M3 có thể đọc:
 
 - `thuoc.MaThuoc`, `thuoc.TenThuoc`: mã và tên thuốc.
-- `thuoc.DonGia`: đơn giá hiện tại, kiểu `decimal`.
+- `thuoc.DonGia`: **giá bán** hiện tại, kiểu `decimal`; giá nhập được lưu riêng ở chi tiết phiếu nhập, không ghi đè thuộc tính này.
 - `thuoc.HSD`: hạn sử dụng, kiểu `DateTime?`; có thể không có giá trị.
 - `thuoc.SoLuong`: số lượng tồn kho hiện tại trong danh sách đã nạp.
 - `thuoc.MaLoai`: mã loại thuốc.
@@ -92,6 +96,31 @@ catch (Exception)
 }
 ```
 
+### 3.4. Tìm kiếm Thuốc nâng cao — phần mới
+
+Chữ ký trong [ThuocBUS](./QLNT.BUS/ThuocBUS.cs):
+
+```csharp
+public ArrayList TimKiemNangCao(
+    string? maThuoc = null, string? tenThuoc = null, string? maLoai = null,
+    decimal? giaTu = null, decimal? giaDen = null, PhepNoi noi = PhepNoi.And)
+```
+
+Ví dụ tìm tên Para **và** giá bán trong khoảng 5.000–20.000:
+
+```csharp
+ArrayList ketQua = new ThuocBUS().TimKiemNangCao(
+    tenThuoc: "Para", giaTu: 5000m, giaDen: 20000m, noi: PhepNoi.And);
+```
+
+- Mã/tên tìm theo chuỗi chứa; mã loại khớp chính xác. Chuỗi bỏ khoảng trắng hai đầu, không phân biệt hoa/thường.
+- Điều kiện trống được bỏ qua. Giá `null` là không giới hạn đầu đó; giá 0 vẫn là điều kiện thực sự. Cả hai đầu khoảng giá đều được tính.
+- AND: đúng tất cả điều kiện; OR: đúng ít nhất một trường chữ **hoặc** nằm trong toàn bộ khoảng giá. Ví dụ OR với Para và khoảng giá là `tên chứa Para OR (giá >= 5000 AND giá <= 20000)`.
+- Giá âm, khoảng ngược, giá trị phép nối sai gây `ArgumentException` hoặc lớp con. Lỗi đọc database cũng có thể phát sinh ngoại lệ.
+- Đầu vào thuốc và kết quả là `ArrayList`. `List<DieuKien>` chỉ chứa tiêu chí cho [BoLoc.Loc](./QLNT.BUS/BoLoc.cs) của M1. Kết quả giữ thứ tự, không nhân đôi thuốc khớp nhiều tiêu chí.
+- [Form Thuốc](./QLNT.GUI/frmThuoc.cs) đã có vùng mã/tên/loại, giá tùy chọn, AND/OR, **Tìm**, **Xóa bộ lọc**, **Tải lại**. Nghiệp vụ lọc nằm trong BUS.
+- API cũ `TimKiem(string)` được giữ nguyên. Bản cập nhật này chưa tự thêm vùng lọc nâng cao vào hộp thoại chọn thuốc của M3.
+
 ## 4. Lưu ý khi M3 ghép vào Hóa đơn
 
 - Hai hàm trên chỉ đọc và kiểm tra; không lưu hóa đơn, không trừ kho, không giữ chỗ số lượng.
@@ -105,19 +134,22 @@ catch (Exception)
 
 | Kiểm tra | Kết quả đã ghi nhận | Giới hạn |
 | --- | --- | --- |
-| `dotnet build QLNT.slnx --no-restore` | Thành công; 0 lỗi, 0 cảnh báo trong phiên triển khai. | Chứng minh code biên dịch được; không chứng minh dữ liệu hay nghiệp vụ chạy đúng. |
+| Build project kiểm thử ngày 09/11/2026 cùng GUI/BUS/DAO tham chiếu | Thành công; 0 lỗi, 0 cảnh báo. | Chứng minh code biên dịch được; không tự chứng minh toàn bộ nghiệp vụ. |
 | Đọc source `ThuocBUS.LayTheoMa` và `ThuocBUS.KiemTraBan` | Đã đối chiếu chữ ký, điều kiện, thứ tự và thông báo trong tài liệu với source. | Là kiểm tra source, không phải thực thi các tình huống bên dưới. |
-| Thử đọc số dòng bảng bằng `sqlcmd` | Chưa truy vấn được; công cụ báo lỗi ODBC/TLS/kết nối. | Chưa xác nhận dữ liệu SQL Server qua công cụ này; chưa kết luận kết nối của ứng dụng bị lỗi tương tự. |
+| Đọc thuốc tồn tại và tải lại cache sau nhập | Đạt: `TH0001` tồn 10, thêm phiếu nhập 3 thì đọc lại tồn 13; giá bán vẫn 100. Xem [Program.KiemTraBUSVaGiaoDich](./tests/QLNT.KiemThuM2/Program.cs). | Chỉ xác nhận dữ liệu thử; không phải mọi trường hợp mã rỗng/không tồn tại. |
+| Tìm kiếm Thuốc trong BUS | 36/36 xác nhận đạt trong lần chạy đầy đủ. Xem [ThuocFilterCases.cs](./tests/QLNT.KiemThuM2/ThuocFilterCases.cs). | Dùng cache giả, khôi phục sau chạy. |
+| Bộ lọc trên form Thuốc | 17/17 xác nhận đạt trong lần chạy đầy đủ. Xem [ThuocFilterUiCases.cs](./tests/QLNT.KiemThuM2/ThuocFilterUiCases.cs). | Điều khiển WinForms thật trên form ẩn; cache giả. |
+| Bộ kiểm thử đầy đủ M2 và tích hợp M3/M4 | **232/232 xác nhận đạt**, exit code 0 ngày 09/11/2026. Xem [README kiểm thử](./tests/QLNT.KiemThuM2/README.md). | SQL dùng database ngẫu nhiên riêng đã xóa; không ghi vào database ứng dụng. Không bao phủ mọi nhánh `KiemTraBan`. |
 
-Người dùng đã phản hồi chung rằng thao tác đã được, nhưng chưa cung cấp kết quả riêng cho từng tình huống. Vì vậy, tài liệu **chưa đánh dấu các ca nghiệp vụ dưới đây là đã đạt**.
+Bộ kiểm thử hiện tại chưa có ca gọi trực tiếp `ThuocBUS.KiemTraBan`. Các ca hóa đơn đã chạy kiểm tra nghiệp vụ lưu/trừ kho ở module hóa đơn, không thay thế việc kiểm tra riêng từng điều kiện của hàm này. Vì vậy, các ca KB bên dưới vẫn ghi chưa xác nhận.
 
-## 6. Những trường hợp chưa có kết quả kiểm thử cụ thể
+## 6. Phạm vi đã/chưa xác nhận riêng cho API lấy thuốc và kiểm tra bán
 
 Các kết quả mong đợi bên dưới được suy ra từ source hiện tại. Dùng thuốc thử hoặc dữ liệu đã xác nhận để kiểm tra; không coi mã ví dụ là chắc chắn tồn tại trong database.
 
 | Mã ca | Hàm/tình huống | Kết quả mong đợi theo code | Trạng thái |
 | --- | --- | --- | --- |
-| LT01 | `LayTheoMa`: mã đang tồn tại | Trả đúng thông tin thuốc, khớp SQL Server. | Chưa xác nhận từng ca. |
+| LT01 | `LayTheoMa`: mã đang tồn tại | Trả đúng thông tin thuốc, khớp SQL Server. | Đạt với dữ liệu thử; tồn trước/sau nhập và giá bán được đối chiếu trong bộ chạy. |
 | LT02 | `LayTheoMa`: mã không tồn tại | Trả `null`. | Chưa xác nhận từng ca. |
 | LT03 | `LayTheoMa`: mã rỗng hoặc toàn khoảng trắng | Trả `null`. | Chưa xác nhận từng ca. |
 | LT04 | `LayTheoMa`: khác hoa/thường, có khoảng trắng hai đầu | Tìm được cùng thuốc nếu mã tồn tại. | Chưa xác nhận từng ca. |
@@ -132,7 +164,7 @@ Các kết quả mong đợi bên dưới được suy ra từ source hiện t�
 | KB09 | Chưa hết hạn; số lượng bán lớn hơn tồn | Báo không đủ tồn kho. | Chưa xác nhận từng ca. |
 | KB10 | Tồn bằng 0; bán 1 đơn vị, chưa hết hạn | Báo không đủ tồn kho. | Chưa xác nhận từng ca. |
 | KB11 | Vừa hết hạn vừa thiếu tồn | Báo hết hạn trước vì thứ tự kiểm tra. | Chưa xác nhận từng ca. |
-| CACHE01 | Tồn trong SQL đã đổi, gọi `TaiLai()` rồi lấy/kiểm tra lại | Kết quả dùng số lượng mới trong SQL. | Chưa xác nhận từng ca. |
+| CACHE01 | Phiếu nhập commit làm thay đổi tồn, lấy lại thuốc | Kết quả dùng số lượng mới trong SQL sau khi BUS xóa cache. | Đạt với thêm/sửa phiếu; chỉ xác nhận đọc lại tồn, chưa kiểm tra mọi nhánh `KiemTraBan`. |
 | DB01 | Không có cache, mất kết nối SQL khi đọc thuốc | GUI nhận và xử lý ngoại lệ, không báo thành công. | Chưa xác nhận từng ca. |
 
 Khi chạy thử, ghi lại mã thuốc, số lượng, ngày bán, HSD, tồn thực tế, kết quả nhận được và người thực hiện. Chỉ chuyển trạng thái sang “Đã đạt” khi đã có kết quả thực tế phù hợp.
@@ -158,6 +190,8 @@ M3 có các lớp `HoaDon`/`CTHoaDon`, `HoaDonDAO`/`HoaDonBUS` và màn hình b�
 
 ### 7.3. Kiểm tra đã thực hiện và giới hạn
 
-`dotnet build .\QLNT.slnx --no-restore -p:BaseOutputPath=D:\Pharma-Pos-validation\bin\` thành công: 0 cảnh báo, 0 lỗi. Build dùng output riêng để không đụng các DLL GUI đang bị tiến trình chạy giữ khóa.
+Ngày 09/11/2026, build project kiểm thử và các project tham chiếu thành công: 0 cảnh báo, 0 lỗi. Lần chạy đầy đủ đạt 232 xác nhận tự động, exit code 0.
 
-Chưa thực hiện giao dịch runtime trên SQL Server trong phiên này; cần nghiệm thu với database đã nạp schema và dữ liệu: lưu thành công, thiếu tồn/hết hạn rollback không đổi kho, sửa tăng/giảm số lượng, hủy hoàn đúng tồn, tiền thừa và in/PDF. Không chạy thử bằng cách ghi dữ liệu vào database thật nếu chưa chuẩn bị dữ liệu kiểm thử riêng.
+[HoaDonCases.KiemTraHoaDon](./tests/QLNT.KiemThuM2/HoaDonCases.cs) đã tạo/sửa/hủy hóa đơn trong SQL, đối chiếu đầu/chi tiết/tiền giảm/tồn, chặn bán vượt tồn, xuất PDF qua Microsoft Print to PDF, xuất báo cáo quý `.xlsx` và đối chiếu các hàm thống kê. [UiEditCases.KiemTraSuaLuuTrenForm](./tests/QLNT.KiemThuM2/UiEditCases.cs) đã bấm sửa/lưu phiếu nhập và hóa đơn trên form ẩn, xác nhận SQL và tồn sau khi lưu.
+
+Chưa thử thủ công trọn luồng qua menu, in ra giấy, mọi biên hạn dùng, mất kết nối giữa giao dịch hoặc hai máy hoạt động đồng thời. Bằng chứng này áp dụng cho schema/dữ liệu trong database thử riêng; database đó đã được xóa, dữ liệu ứng dụng không bị thay đổi.

@@ -75,6 +75,69 @@ public class ThuocBUS
         return ketQua;
     }
 
+    // Mã/tên tìm theo chuỗi chứa; mã loại khớp chính xác. Bỏ qua ô trống.
+    // Khoảng giá (tính cả hai đầu) luôn là một nhóm AND, kể cả khi nối các trường bằng OR.
+    public ArrayList TimKiemNangCao(
+        string? maThuoc = null,
+        string? tenThuoc = null,
+        string? maLoai = null,
+        decimal? giaTu = null,
+        decimal? giaDen = null,
+        PhepNoi noi = PhepNoi.And)
+    {
+        if (noi != PhepNoi.And && noi != PhepNoi.Or)
+            throw new ArgumentOutOfRangeException(nameof(noi), "Chỉ được chọn AND hoặc OR.");
+        if (giaTu < 0 || giaDen < 0)
+            throw new ArgumentException("Giá tìm kiếm không được âm.");
+        if (giaTu.HasValue && giaDen.HasValue && giaTu.Value > giaDen.Value)
+            throw new ArgumentException("Giá từ không được lớn hơn giá đến.");
+
+        // Đây là danh sách điều kiện theo API BoLoc của M1; danh sách thuốc vẫn là ArrayList.
+        var dieuKienChu = new List<DieuKien>();
+        ThemDieuKienChu(dieuKienChu, nameof(Thuoc.MaThuoc), maThuoc, PhepSoSanh.Chua);
+        ThemDieuKienChu(dieuKienChu, nameof(Thuoc.TenThuoc), tenThuoc, PhepSoSanh.Chua);
+        ThemDieuKienChu(dieuKienChu, nameof(Thuoc.MaLoai), maLoai, PhepSoSanh.Bang);
+
+        var dieuKienGia = new List<DieuKien>();
+        if (giaTu.HasValue)
+            dieuKienGia.Add(new DieuKien
+            {
+                TenTruong = nameof(Thuoc.DonGia), Phep = PhepSoSanh.LonHoacBang, GiaTri = giaTu.Value
+            });
+        if (giaDen.HasValue)
+            dieuKienGia.Add(new DieuKien
+            {
+                TenTruong = nameof(Thuoc.DonGia), Phep = PhepSoSanh.NhoHoacBang, GiaTri = giaDen.Value
+            });
+
+        ArrayList danhSach = LayDanhSach();
+        if (dieuKienChu.Count == 0)
+            return BoLoc.Loc(danhSach, dieuKienGia, PhepNoi.And);
+
+        ArrayList theoChu = BoLoc.Loc(danhSach, dieuKienChu, noi);
+        if (dieuKienGia.Count == 0)
+            return theoChu;
+        if (noi == PhepNoi.And)
+            return BoLoc.Loc(theoChu, dieuKienGia, PhepNoi.And);
+
+        // OR: đúng ít nhất một trường chữ HOẶC nằm trong toàn bộ khoảng giá.
+        ArrayList theoGia = BoLoc.Loc(danhSach, dieuKienGia, PhepNoi.And);
+        var ketQua = new ArrayList();
+        foreach (Thuoc thuoc in danhSach)
+        {
+            if (theoChu.Contains(thuoc) || theoGia.Contains(thuoc))
+                ketQua.Add(thuoc);
+        }
+        return ketQua;
+    }
+
+    private static void ThemDieuKienChu(
+        List<DieuKien> dieuKien, string tenTruong, string? giaTri, PhepSoSanh phep)
+    {
+        if (!string.IsNullOrWhiteSpace(giaTri))
+            dieuKien.Add(new DieuKien { TenTruong = tenTruong, Phep = phep, GiaTri = giaTri.Trim() });
+    }
+
     public KetQua KiemTraBan(string maThuoc, int soLuong, DateTime ngayBan)
     {
         if (soLuong <= 0)

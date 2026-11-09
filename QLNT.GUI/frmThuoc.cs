@@ -9,7 +9,15 @@ public sealed class frmThuoc : Form
     private readonly TextBox txtMa = new() { ReadOnly = true, Dock = DockStyle.Fill };
     private readonly TextBox txtTen = new() { Dock = DockStyle.Fill, MaxLength = 100 };
     private readonly TextBox txtTonKho = new() { ReadOnly = true, Dock = DockStyle.Fill };
-    private readonly TextBox txtTimKiem = new() { Dock = DockStyle.Fill };
+    private readonly TextBox txtLocMa = new() { Name = "txtLocMaThuoc", Dock = DockStyle.Fill, MaxLength = 10 };
+    private readonly TextBox txtLocTen = new() { Name = "txtLocTenThuoc", Dock = DockStyle.Fill, MaxLength = 100 };
+    private readonly ComboBox cboLocLoai = new() { Name = "cboLocLoaiThuoc", Dock = DockStyle.Fill, DropDownStyle = ComboBoxStyle.DropDownList };
+    private readonly ComboBox cboPhepNoi = new() { Name = "cboLocPhepNoi", Dock = DockStyle.Fill, DropDownStyle = ComboBoxStyle.DropDownList };
+    private readonly CheckBox chkGiaTu = new() { Name = "chkLocGiaTu", Text = "Giá từ:", AutoSize = true, Anchor = AnchorStyles.Left };
+    private readonly CheckBox chkGiaDen = new() { Name = "chkLocGiaDen", Text = "Giá đến:", AutoSize = true, Anchor = AnchorStyles.Left };
+    private readonly NumericUpDown nudGiaTu = OGiaLoc("nudLocGiaTu");
+    private readonly NumericUpDown nudGiaDen = OGiaLoc("nudLocGiaDen");
+    private readonly Label lblLoiLoc = new() { Name = "lblLoiLocThuoc", AutoSize = true, ForeColor = Color.DarkRed, Padding = new Padding(8, 7, 0, 0) };
     private readonly ComboBox cboLoai = new() { Dock = DockStyle.Fill, DropDownStyle = ComboBoxStyle.DropDownList };
     private readonly DateTimePicker dtpHSD = new() { Dock = DockStyle.Fill, ShowCheckBox = true };
     private readonly NumericUpDown nudDonGia = new()
@@ -19,31 +27,16 @@ public sealed class frmThuoc : Form
         ThousandsSeparator = true,
         Maximum = 9999999999999999.99m
     };
-    private readonly ListView lvThuoc = new();
-    private readonly Label lblSoLuong = new();
+    private readonly ListView lvThuoc = new() { Name = "lvThuoc" };
+    private readonly Label lblSoLuong = new() { Name = "lblSoLuongThuoc" };
 
     public frmThuoc()
     {
         Text = "Danh sách thuốc";
-        MinimumSize = new Size(700, 500);
-        Size = new Size(1050, 650);
+        MinimumSize = new Size(850, 600);
+        Size = new Size(1100, 730);
 
-        var thanhTimKiem = new TableLayoutPanel
-        {
-            Dock = DockStyle.Top,
-            Height = 55,
-            Padding = new Padding(12),
-            ColumnCount = 3
-        };
-        thanhTimKiem.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
-        thanhTimKiem.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        thanhTimKiem.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
-        thanhTimKiem.Controls.Add(Nhan("Tìm mã, tên hoặc mã loại:"), 0, 0);
-        thanhTimKiem.Controls.Add(txtTimKiem, 1, 0);
-        var btnTaiLai = new Button { Text = "Tải lại", AutoSize = true };
-        btnTaiLai.Click += (_, _) => TaiLai();
-        thanhTimKiem.Controls.Add(btnTaiLai, 2, 0);
-        txtTimKiem.TextChanged += (_, _) => TimKiem();
+        GroupBox thanhTimKiem = TaoVungLoc();
 
         var thanhNhap = new TableLayoutPanel
         {
@@ -126,6 +119,79 @@ public sealed class frmThuoc : Form
         Anchor = AnchorStyles.Left
     };
 
+    private static NumericUpDown OGiaLoc(string ten) => new()
+    {
+        Name = ten, Dock = DockStyle.Fill, DecimalPlaces = 2,
+        Maximum = 9999999999999999.99m, ThousandsSeparator = true, Enabled = false
+    };
+
+    private GroupBox TaoVungLoc()
+    {
+        var nhom = new GroupBox
+        {
+            Name = "grpLocThuoc", Text = "Tìm kiếm nâng cao (giá bán)",
+            Dock = DockStyle.Top, Height = 145, Padding = new Padding(12, 8, 12, 6)
+        };
+        var bang = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 6, RowCount = 3 };
+        bang.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 90));
+        bang.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 30));
+        bang.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 90));
+        bang.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 35));
+        bang.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 80));
+        bang.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 35));
+        bang.RowStyles.Add(new RowStyle(SizeType.Absolute, 34));
+        bang.RowStyles.Add(new RowStyle(SizeType.Absolute, 34));
+        bang.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        ThemO(bang, "Mã thuốc:", txtLocMa, 0, 0);
+        ThemO(bang, "Tên thuốc:", txtLocTen, 2, 0);
+        ThemO(bang, "Loại thuốc:", cboLocLoai, 4, 0);
+        cboLocLoai.DisplayMember = nameof(LoaiThuoc.TenLoai);
+        cboLocLoai.ValueMember = nameof(LoaiThuoc.MaLoai);
+        bang.Controls.Add(chkGiaTu, 0, 1);
+        bang.Controls.Add(nudGiaTu, 1, 1);
+        bang.Controls.Add(chkGiaDen, 2, 1);
+        bang.Controls.Add(nudGiaDen, 3, 1);
+        ThemO(bang, "Kết hợp:", cboPhepNoi, 4, 1);
+        cboPhepNoi.Items.AddRange(["AND", "OR"]);
+        cboPhepNoi.SelectedIndex = 0;
+        chkGiaTu.CheckedChanged += (_, _) => nudGiaTu.Enabled = chkGiaTu.Checked;
+        chkGiaDen.CheckedChanged += (_, _) => nudGiaDen.Enabled = chkGiaDen.Checked;
+
+        var thanhNut = new FlowLayoutPanel { Dock = DockStyle.Fill, WrapContents = false, Margin = Padding.Empty };
+        var btnTim = new Button { Name = "btnTimKiemThuoc", Text = "Tìm", AutoSize = true };
+        var btnXoaLoc = new Button { Name = "btnXoaBoLocThuoc", Text = "Xóa bộ lọc", AutoSize = true };
+        var btnTaiLai = new Button { Name = "btnTaiLaiThuoc", Text = "Tải lại", AutoSize = true };
+        btnTim.Click += (_, _) => TimKiem();
+        btnXoaLoc.Click += (_, _) => { DatLaiBoLoc(); TimKiem(); };
+        btnTaiLai.Click += (_, _) => TaiLai();
+        thanhNut.Controls.AddRange([btnTim, btnXoaLoc, btnTaiLai, lblLoiLoc]);
+        bang.Controls.Add(thanhNut, 0, 2);
+        bang.SetColumnSpan(thanhNut, 6);
+        nhom.Controls.Add(bang);
+
+        foreach (Control o in new Control[] { txtLocMa, txtLocTen, nudGiaTu, nudGiaDen, cboLocLoai, cboPhepNoi })
+            o.KeyDown += (_, e) =>
+            {
+                if (e.KeyCode != Keys.Enter) return;
+                e.SuppressKeyPress = true;
+                TimKiem();
+            };
+        return nhom;
+    }
+
+    private void DatLaiBoLoc()
+    {
+        txtLocMa.Clear();
+        txtLocTen.Clear();
+        cboLocLoai.SelectedIndex = cboLocLoai.Items.Count > 0 ? 0 : -1;
+        chkGiaTu.Checked = false;
+        chkGiaDen.Checked = false;
+        nudGiaTu.Value = 0;
+        nudGiaDen.Value = 0;
+        cboPhepNoi.SelectedIndex = 0;
+        lblLoiLoc.Text = string.Empty;
+    }
+
     private static void ThemO(TableLayoutPanel bang, string nhan, Control o, int cot, int hang)
     {
         bang.Controls.Add(Nhan(nhan), cot, hang);
@@ -134,10 +200,23 @@ public sealed class frmThuoc : Form
 
     private void NapLoaiThuoc()
     {
+        string? maLoaiLoc = (cboLocLoai.SelectedItem as LoaiThuoc)?.MaLoai;
         cboLoai.Items.Clear();
+        cboLocLoai.Items.Clear();
+        cboLocLoai.Items.Add(new LoaiThuoc(string.Empty, "Tất cả loại"));
         foreach (LoaiThuoc loai in loaiBus.LayTatCa())
+        {
             cboLoai.Items.Add(loai);
+            cboLocLoai.Items.Add(loai);
+        }
         cboLoai.SelectedIndex = cboLoai.Items.Count > 0 ? 0 : -1;
+        cboLocLoai.SelectedIndex = 0;
+        for (int i = 1; i < cboLocLoai.Items.Count; i++)
+            if (((LoaiThuoc)cboLocLoai.Items[i]!).MaLoai.Equals(maLoaiLoc, StringComparison.OrdinalIgnoreCase))
+            {
+                cboLocLoai.SelectedIndex = i;
+                break;
+            }
     }
 
     private void ChonThuoc()
@@ -292,7 +371,7 @@ public sealed class frmThuoc : Form
             ketQua.ThanhCong ? MessageBoxIcon.Information : MessageBoxIcon.Warning);
         if (ketQua.ThanhCong)
         {
-            txtTimKiem.Clear();
+            DatLaiBoLoc();
             TaiLai();
         }
     }
@@ -301,8 +380,20 @@ public sealed class frmThuoc : Form
     {
         try
         {
-            HienThi(bus.TimKiem(txtTimKiem.Text));
+            ArrayList ketQua = bus.TimKiemNangCao(
+                maThuoc: txtLocMa.Text,
+                tenThuoc: txtLocTen.Text,
+                maLoai: (cboLocLoai.SelectedItem as LoaiThuoc)?.MaLoai,
+                giaTu: chkGiaTu.Checked ? nudGiaTu.Value : null,
+                giaDen: chkGiaDen.Checked ? nudGiaDen.Value : null,
+                noi: cboPhepNoi.SelectedIndex == 1 ? PhepNoi.Or : PhepNoi.And);
+            HienThi(ketQua);
             ChuanBiThem(false);
+            lblLoiLoc.Text = string.Empty;
+        }
+        catch (ArgumentException ex)
+        {
+            lblLoiLoc.Text = ex.Message;
         }
         catch (Exception ex)
         {
@@ -317,8 +408,7 @@ public sealed class frmThuoc : Form
             ThuocBUS.TaiLai();
             LoaiThuocBUS.TaiLai();
             NapLoaiThuoc();
-            HienThi(bus.TimKiem(txtTimKiem.Text));
-            ChuanBiThem(false);
+            TimKiem();
         }
         catch (Exception ex)
         {
@@ -331,6 +421,7 @@ public sealed class frmThuoc : Form
         lvThuoc.BeginUpdate();
         try
         {
+            lvThuoc.SelectedItems.Clear();
             lvThuoc.Items.Clear();
             foreach (Thuoc thuoc in danhSach)
             {

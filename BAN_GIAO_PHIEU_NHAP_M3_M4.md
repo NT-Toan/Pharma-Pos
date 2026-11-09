@@ -1,6 +1,18 @@
-# Bàn giao M2: Phiếu nhập và nhập danh mục thuốc từ Excel
+# Bàn giao M2: Thuốc, Phiếu nhập, tồn kho và Excel
 
-Ngày kiểm tra: **04/11/2026**.
+Người bàn giao: **M2 — Nam**. Người nhận: **M3 — Toàn, M4 — Tường và M1 phụ trách ghép code**.
+
+Ngày cập nhật và kiểm thử gần nhất: **09/11/2026**.
+
+**Trạng thái:** bản source đã qua bộ kiểm thử tự động. Nhánh bàn giao là `m2-thuoc-nhap`, gồm phần tìm kiếm Thuốc nâng cao, giao diện bộ lọc và các thay đổi kiểm thử/tài liệu. M1 nhận commit chứa tài liệu này để ghép và nghiệm thu; bản bàn giao này chưa được hợp nhất vào `main`.
+
+## Đọc nhanh: mỗi người nhận gì?
+
+| Người nhận | Nội dung bàn giao | Phần cần phối hợp |
+| --- | --- | --- |
+| M3 | Lấy thuốc, giá bán, tồn sau nhập; kiểm tra điều kiện bán; tìm kiếm nhiều trường AND/OR | Tải lại dữ liệu trên màn hình bán hàng và đối chiếu tồn sau nhập/bán/sửa/hủy |
+| M4 | Đầu phiếu, chi tiết, ngày nhập, tổng tiền; kết quả đối chiếu tổng chi | Chọn cùng khoảng ngày khi so sánh phiếu nhập với báo cáo |
+| M1 | Source M2, cách gọi BUS và kết quả kiểm thử | Ghép đúng bản, build và thử luồng chung qua menu |
 
 ## 1. Đã làm gì?
 
@@ -8,7 +20,8 @@ Ngày kiểm tra: **04/11/2026**.
 - Tính tiền và kiểm tra dữ liệu ở BUS; danh sách nghiệp vụ và tìm kiếm dùng `ArrayList`.
 - Chặn tồn âm, tràn số lượng, dữ liệu không hợp lệ và thao tác trên phiếu đã bị người khác thay đổi.
 - Nhập danh mục thuốc mới từ file `.xlsx`, có nút tạo mẫu, tự tạo mã, tồn ban đầu bằng 0.
-- Bộ kiểm tra trước cập nhật tên/trạng thái nút đạt **118/118**; phần soạn phiếu mới đạt thêm **14/14 kiểm tra riêng**. Giới hạn kiểm thử xem mục 6.
+- Tìm Thuốc theo mã/tên/loại, khoảng giá bán, chọn AND/OR; lọc trên `ArrayList` trong BUS, dùng bộ lọc M1. Form chỉ gửi điều kiện và hiển thị kết quả.
+- Build **0 lỗi, 0 cảnh báo**; bộ kiểm thử hiện tại đạt **232/232 xác nhận tự động**, exit code 0. Đây là tổng các ca M2 và tích hợp M3/M4; phạm vi và giới hạn xem mục 6.
 
 ## 2. File và kiến trúc
 
@@ -23,7 +36,8 @@ Ngày kiểm tra: **04/11/2026**.
 | Soạn phiếu | [frmTaoPhieuNhap.cs](./QLNT.GUI/frmTaoPhieuNhap.cs) | Chọn nhân viên/NCC/thuốc; chỉnh các dòng dự thảo; lưu thêm hoặc sửa |
 | Đọc/tạo Excel | [ThuocExcel.cs](./QLNT.BUS/ThuocExcel.cs) | Đọc giá trị ô, kiểm tra cấu trúc file, tạo mẫu `.xlsx` bằng ClosedXML |
 | Nhập thuốc | [ThuocBUS.cs](./QLNT.BUS/ThuocBUS.cs), [ThuocDAO.cs](./QLNT.DAO/ThuocDAO.cs) | `NhapTuExcel` kiểm tra cả file; `ThemHangLoat` lưu trong một giao dịch |
-| Giao diện Excel | [frmThuoc.cs](./QLNT.GUI/frmThuoc.cs) | Nút **Tạo mẫu Excel**, **Nhập Excel** |
+| Tìm kiếm Thuốc | [ThuocBUS.cs](./QLNT.BUS/ThuocBUS.cs), [BoLoc.cs](./QLNT.BUS/BoLoc.cs) | `TimKiemNangCao` kết hợp các trường và nhóm khoảng giá trên `ArrayList` |
+| Giao diện Thuốc | [frmThuoc.cs](./QLNT.GUI/frmThuoc.cs) | Vùng tìm kiếm AND/OR; nút **Tìm**, **Xóa bộ lọc**, **Tải lại**, **Tạo mẫu Excel**, **Nhập Excel** |
 
 Luồng lưu phiếu: GUI → BUS → DAO → [MyConnection.ChayGiaoDich](./QLNT.DAO/MyConnection.cs) → SQL Server.
 GUI không tự viết SQL hoặc tự sửa tồn kho. Hàm giao dịch của M1 đã được dùng, không thay đổi.
@@ -70,8 +84,29 @@ Các hàm thuộc [ThuocBUS](./QLNT.BUS/ThuocBUS.cs); tài liệu trước: [Bà
 | Cần làm | Cách gọi | Ý nghĩa |
 | --- | --- | --- |
 | Làm mới dữ liệu trước khi dùng lại màn hình đang mở | `ThuocBUS.TaiLai()` | Lần đọc tiếp theo lấy lại tồn mới |
+| Lấy danh sách thuốc | `new ThuocBUS().LayTatCa()` | `ArrayList` chứa các đối tượng `Thuoc` |
 | Lấy một thuốc | `new ThuocBUS().LayTheoMa("TH0001")` | Trả `Thuoc?`; kiểm tra `null` nếu không có |
 | Kiểm tra bán | `new ThuocBUS().KiemTraBan("TH0001", 2, DateTime.Today)` | Kiểm tra lượng > 0, thuốc tồn tại, chưa hết hạn và đủ tồn; không trừ kho |
+
+Ví dụ M3 lấy lại giá và tồn sau khi phiếu nhập đã lưu thành công:
+
+```csharp
+ThuocBUS.TaiLai();
+var thuocBUS = new ThuocBUS();
+Thuoc? thuoc = thuocBUS.LayTheoMa("TH0001");
+if (thuoc != null)
+{
+    decimal giaBan = thuoc.DonGia;
+    int tonHienTai = thuoc.SoLuong;
+    DateTime? hanDung = thuoc.HSD;
+    KetQua kiemTra = thuocBUS.KiemTraBan(thuoc.MaThuoc, 2, DateTime.Today);
+    // GUI đọc kiemTra.ThanhCong và kiemTra.ThongBao để xử lý.
+}
+```
+
+Đây là mẫu gọi API; mã `TH0001` phải được thay bằng thuốc người dùng chọn. Các hàm đọc có thể ném ngoại lệ kết nối; GUI cần xử lý lỗi. Không sửa trực tiếp `thuoc.SoLuong` để cập nhật kho: đối tượng thuộc cache, thao tác đó không ghi SQL.
+
+`thuoc.DonGia` là **giá bán**; giá mua nằm ở `CTPhieuNhap.DonGia`. Nhập thuốc chỉ tăng tồn, không tự đổi giá bán. `KiemTraBan` kiểm tra hạn dùng và tồn trong cùng một hàm: HSD trước ngày bán bị chặn; HSD bằng ngày bán được phép; HSD `null` bỏ qua bước hạn dùng theo code hiện tại. Hàm chỉ kiểm tra, không giữ chỗ hoặc trừ kho. Các trường hợp biên hạn dùng chưa có ca kiểm thử trực tiếp trong lần chạy 232 xác nhận.
 
 Thêm/sửa/xóa phiếu thành công tự xóa cache thuốc trong cùng tiến trình ứng dụng. Màn hình M3 đang mở vẫn cần nạp lại danh sách để hiển thị số mới. Nếu chạy ở ứng dụng khác, phải chủ động tải lại; cache không chia sẻ giữa các tiến trình.
 
@@ -83,6 +118,53 @@ Lệnh trừ/hoàn kho của hóa đơn vẫn phải kiểm tra tồn trong giao
 - Giá nhập nằm ở `CTPN.DONGIA`; giá bán nằm ở `THUOC.DONGIA`. Lưu phiếu không ghi đè giá bán.
 - Đã gọi trực tiếp [ThongKeBUS.TongChi](./QLNT.BUS/ThongKeBUS.cs) trên database kiểm thử: thêm phiếu tăng chi, sửa phiếu đổi chi, xóa phiếu loại phần chi tương ứng.
 - Tổng chi hiện tại phản ánh các phiếu đang có. Đây là xóa vật lý; project chưa có lịch sử kiểm toán phiếu bị xóa.
+
+Ví dụ M4 đọc đầu phiếu, các dòng thuốc và đối chiếu tổng chi:
+
+```csharp
+var phieuBUS = new PhieuNhapBUS();
+PhieuNhapBUS.TaiLai();
+ArrayList cacPhieu = phieuBUS.LayTatCa();
+ArrayList cacDong = phieuBUS.LayChiTiet("PN0001");
+decimal tongChi = new QLNT.BUS.ThongKeBUS()
+    .TongChi(DateTime.Today, DateTime.Today);
+```
+
+Đọc `PhieuNhap.MaPN`, `NgayNhap`, `TongTien` ở đầu phiếu; đọc `CTPhieuNhap.SoLuong`, `DonGia`, `ThanhTien` ở chi tiết. `LayTatCa()` chưa lọc theo ngày; `TongChi(tuNgay, denNgay)` lấy tổng trong khoảng ngày truyền vào, tính cả ngày đầu và ngày cuối. Tổng chi ngày không nhất thiết bằng một phiếu, vì có thể có nhiều phiếu trong ngày. `ThongKeBUS` là phần sẵn có của M4; M2 đã gọi để đối chiếu, không bổ sung API thống kê mới.
+
+### 3.4. Tìm kiếm Thuốc nhiều trường và khoảng giá
+
+API thuộc [ThuocBUS.TimKiemNangCao](./QLNT.BUS/ThuocBUS.cs):
+
+```csharp
+public ArrayList TimKiemNangCao(
+    string? maThuoc = null, string? tenThuoc = null, string? maLoai = null,
+    decimal? giaTu = null, decimal? giaDen = null, PhepNoi noi = PhepNoi.And)
+```
+
+Ví dụ tên chứa Para **và** giá bán từ 5.000 đến 20.000:
+
+```csharp
+ArrayList ketQua = new ThuocBUS().TimKiemNangCao(
+    tenThuoc: "Para", giaTu: 5000m, giaDen: 20000m, noi: PhepNoi.And);
+```
+
+Đổi `noi` sang `PhepNoi.Or` để tìm tên chứa Para **hoặc** giá nằm trong toàn bộ khoảng 5.000–20.000.
+
+| Điều kiện | Quy tắc |
+| --- | --- |
+| Mã/tên thuốc | Tìm chuỗi chứa; bỏ khoảng trắng hai đầu, không phân biệt hoa/thường |
+| Loại thuốc | Truyền **mã loại**, khớp chính xác; form hiển thị tên để chọn |
+| Giá từ/đến | Giá bán `Thuoc.DonGia`; tính cả hai đầu; có thể chỉ truyền một đầu |
+| Điều kiện trống | Bỏ qua; tất cả trống trả toàn bộ thuốc |
+| AND | Đúng tất cả các điều kiện đã nhập |
+| OR | Đúng ít nhất một trường chữ hoặc đúng toàn bộ nhóm khoảng giá; không nối OR giữa hai đầu giá |
+| Kết quả | `ArrayList`, giữ thứ tự gốc, thuốc khớp nhiều điều kiện không bị nhân đôi |
+| Giá âm/khoảng ngược/phép nối sai | Ném `ArgumentException` hoặc lớp con; bên gọi cần bắt lỗi |
+
+Danh sách thuốc và kết quả dùng `ArrayList`; `List<DieuKien>` chỉ chứa tiêu chí để gọi [BoLoc.Loc](./QLNT.BUS/BoLoc.cs) của M1. Lần đọc đầu có thể nạp thuốc từ DAO; việc lọc thực hiện trong bộ nhớ.
+
+Trên [form Thuốc](./QLNT.GUI/frmThuoc.cs): nhập điều kiện → đánh dấu giá từ/đến nếu cần → chọn AND/OR → **Tìm** hoặc Enter. **Xóa bộ lọc** đặt lại tiêu chí và hiện toàn bộ thuốc. **Tải lại** đọc dữ liệu mới rồi áp dụng lại điều kiện hiện tại. Khoảng giá ngược hiển thị lỗi ngay vùng lọc và giữ kết quả trước đó.
 
 ## 4. Quy tắc tồn kho, tiền và rollback
 
@@ -130,13 +212,18 @@ Chỉ hỗ trợ `.xlsx`; file `.xls` cũ cần mở trong Excel và **Save As �
 
 ## 6. Kết quả kiểm thử và phần còn cần thử chung
 
-Mã kiểm thử: [Program.cs](./tests/QLNT.KiemThuM2/Program.cs), [Cases.cs](./tests/QLNT.KiemThuM2/Cases.cs), [PickerCases.cs](./tests/QLNT.KiemThuM2/PickerCases.cs), [DraftCases.cs](./tests/QLNT.KiemThuM2/DraftCases.cs). Cách chạy: [README kiểm thử](./tests/QLNT.KiemThuM2/README.md).
+Mã kiểm thử: [Program.cs](./tests/QLNT.KiemThuM2/Program.cs), [Cases.cs](./tests/QLNT.KiemThuM2/Cases.cs), [PickerCases.cs](./tests/QLNT.KiemThuM2/PickerCases.cs), [DraftCases.cs](./tests/QLNT.KiemThuM2/DraftCases.cs), [UiEditCases.cs](./tests/QLNT.KiemThuM2/UiEditCases.cs), [ThuocFilterCases.cs](./tests/QLNT.KiemThuM2/ThuocFilterCases.cs), [ThuocFilterUiCases.cs](./tests/QLNT.KiemThuM2/ThuocFilterUiCases.cs). Cách chạy và kết quả chi tiết: [README kiểm thử](./tests/QLNT.KiemThuM2/README.md).
 
-Lần chạy toàn bộ gần nhất, trước khi đổi tên/trạng thái 4 nút: **118/118 kiểm tra đạt**, tiến trình kết thúc mã 0.
+Lần chạy đầy đủ ngày **09/11/2026**: **232/232 xác nhận tự động đạt**, tiến trình kết thúc mã **0**. Build project kiểm thử và các project GUI/BUS/DAO tham chiếu: **0 lỗi, 0 cảnh báo**. Tổng này đã bao gồm các ca bộ lọc mới và tích hợp M3/M4; không cộng thêm các kết quả chạy riêng vào 232.
 
-Sau cập nhật giao diện: chạy riêng `--draft-only`, **14/14 kiểm tra đạt**, không kết nối database. Đã thử thêm nhiều thuốc, tự làm mới ô nhập, chọn/cập nhật/bỏ thuốc, nhập mới không mất bản nháp/đầu phiếu, chặn thêm trùng, khóa cập nhật khi vượt giới hạn tiền và bật lại khi dữ liệu hợp lệ. Build bản kiểm thử ở thư mục tạm: **0 lỗi, 0 cảnh báo**. Build vào thư mục chạy mặc định ban đầu bị chặn bởi ứng dụng đang mở; cần đóng và chạy lại ứng dụng để dùng bản mới.
+Các lệnh đã dùng:
 
-Database riêng `QLNT_Test_PN_5e1421f5fcec462cb7a89fcbeede6225` được tạo, dùng và đã xóa sau kiểm thử. Không ghi vào `QLNhaThuoc`. Schema kiểm thử có 6 bảng cần cho M2, khóa ngoại và ràng buộc số lượng/giá như các bảng tương ứng trong script nhóm.
+```powershell
+dotnet build tests/QLNT.KiemThuM2/QLNT.KiemThuM2.csproj --no-restore
+dotnet run --project tests/QLNT.KiemThuM2/QLNT.KiemThuM2.csproj --no-build --no-restore
+```
+
+Database riêng `QLNT_Test_PN_afdef8ee4a9140e99e928ba0ce187948` được tạo, xác minh kết nối và đã xóa sau kiểm thử. Không ghi vào `QLNhaThuoc`. Schema thử chứa các bảng cần cho Phiếu nhập, Thuốc, Hóa đơn, Khuyến mãi và Thống kê cùng các khóa/ràng buộc tương ứng. Các ca bộ lọc dùng cache giả và khôi phục sau khi chạy. Kiểm thử giao diện chạy trên điều khiển WinForms thật ở form ẩn.
 
 | Nhóm đã chạy | Nội dung xác minh | Kết quả |
 | --- | --- | --- |
@@ -154,12 +241,30 @@ Database riêng `QLNT_Test_PN_5e1421f5fcec462cb7a89fcbeede6225` được tạo, 
 | Khởi tạo WinForms | Mở form ẩn; tải danh sách; chọn phiếu hiện chi tiết; nạp phiếu sửa; mã/tổng chỉ đọc; các nút mới có mặt; picker chọn được thuốc tồn 0 | Đạt |
 | Chọn/đổi thuốc WinForms | Chuyển dòng khi lượng cũ ở mức tối đa; bỏ chọn; thuốc tồn 0/int.MaxValue; xóa danh sách; tìm không có kết quả rồi xóa từ khóa | Đạt cho nhập/bán; lỗi gán Value=0 khi Minimum=1 đã được tái hiện trước sửa và hết lỗi sau sửa |
 | Soạn bản nháp qua nút mới | Thêm/cập nhật/bỏ thuốc, nhập mới và tự làm mới; trạng thái nút theo lựa chọn/dữ liệu; tổng tiền; giữ nguyên đầu phiếu | 14/14 đạt sau cập nhật UX; không ghi SQL |
+| Bộ lọc Thuốc trong BUS | Mã/tên/loại, AND/OR, nhóm khoảng giá, biên giá, giá lẻ, Unicode, ô trống, kết quả rỗng, không trùng, dữ liệu sai, không đổi cache | 36/36 đạt trong lần chạy đầy đủ |
+| Bộ lọc trên form Thuốc | Nút Tìm, Enter, AND/OR, chọn loại, giá tùy chọn/giá 0, xóa bộ lọc, báo khoảng giá sai, bố cục tối thiểu | 17/17 đạt trong lần chạy đầy đủ; dùng cache giả |
+| Bấm sửa/lưu trên form thật | Mở phiếu đã lưu, đổi lượng, cập nhật chi tiết rồi bấm Lưu; kiểm tra SQL và tồn sau commit | Đạt trên database thử |
+| Hóa đơn M3 và báo cáo | Tạo/sửa/hủy hóa đơn, giá/giảm giá/tồn, bấm lưu form sửa hóa đơn, xuất PDF thật, báo cáo quý `.xlsx` và đối chiếu thống kê tháng/quý/năm | Đạt các ca tự động trong bộ chạy; xem [HoaDonCases.cs](./tests/QLNT.KiemThuM2/HoaDonCases.cs) |
+
+### Ví dụ nhập rồi bán đã có kết quả thực tế
+
+[UiEditCases.KiemTraSuaLuuTrenForm](./tests/QLNT.KiemThuM2/UiEditCases.cs) dùng thuốc thử `TH0900`, giá bán 100, tồn ban đầu 0:
+
+| Bước thực hiện | Tồn đã xác minh | Thông tin đối chiếu |
+| --- | --- | --- |
+| Tạo phiếu nhập 10, giá nhập 5 qua BUS | 10 | Ca tạo xác nhận thành công và tồn 10 |
+| Trên form sửa phiếu: đổi lượng thành 12, Cập nhật rồi Lưu | 12 | Phiếu nhập 60 |
+| Tạo hóa đơn bán 2 qua BUS | 10 | Ca này xác nhận tạo thành công và tồn 10 |
+| Trên form sửa hóa đơn: đổi lượng bán thành 3 rồi Lưu | 9 | Hóa đơn 300 |
+
+Mã thuốc/phiếu của ca này chỉ nằm trong database thử đã xóa; không phải dữ liệu có sẵn để nhóm tra trong database ứng dụng.
 
 ### Chưa xác nhận bằng kiểm thử hiện tại
 
-- Chưa thao tác thủ công toàn bộ nút lưu/sửa/xóa và hộp thoại chọn file trên màn hình người dùng. Kiểm thử ghi SQL gọi BUS/DAO; phần bản nháp đã thử bấm nút thật trên cửa sổ ẩn với dữ liệu giả thay kết quả hộp thoại chọn thuốc.
-- Chưa chạy toàn luồng qua form Hóa đơn M3, khuyến mãi, xuất PDF và báo cáo Excel M4. Ca tranh chấp kho dùng SQL mô phỏng bán, không phải toàn bộ hàm lưu hóa đơn M3.
-- Chưa thử giao diện thống kê tháng/quý/năm, xuất báo cáo hoặc kết nối từ nhiều máy; chưa đo tải lớn hay lỗi mất điện/mạng lúc commit.
+- Chưa thao tác thủ công trọn luồng qua menu trên dữ liệu đồ án hiện có, gồm các hộp thoại chọn file, chọn từng đối tượng, thêm/xóa phiếu qua mọi nút. Đã bấm nút bản nháp và sửa/lưu trên form ẩn như bảng trên.
+- Chưa có ca gọi trực tiếp `ThuocBUS.KiemTraBan` cho từng biên hạn dùng, mã không tồn tại và số lượng 0/âm/bằng tồn. Các kiểm tra này mới được đối chiếu source; không coi việc hóa đơn lưu thành công là đã bao phủ mọi nhánh của API này. Chi tiết tại [Bàn giao Thuốc cho M3](./BAN_GIAO_THUOC_M3.md).
+- Chưa thử trọn giao diện chọn khoảng ngày thống kê và mọi báo cáo nhiều năm; đã đối chiếu các hàm thống kê tháng/quý/năm và đọc lại tệp Excel/PDF trong các ca tự động.
+- Ca tranh chấp xóa phiếu/bán đồng thời dùng một lệnh SQL bán có giao dịch; chưa chạy hai ứng dụng trên hai máy đồng thời. Chưa đo tải lớn hay thử mất điện/mạng lúc commit.
 - Chưa thử mọi schema/trigger khác với script nhóm. Code yêu cầu đúng số dòng tác động; trigger thay đổi cách báo số dòng cần kiểm tra riêng nếu nhóm bổ sung.
 
 ### M3/M4 nên thử chung tiếp theo
@@ -169,3 +274,5 @@ Database riêng `QLNT_Test_PN_5e1421f5fcec462cb7a89fcbeede6225` được tạo, 
 3. M2 sửa phiếu xuống 8: tồn giảm thêm 2. Nếu giảm/xóa đến mức không đủ tồn để hoàn, phải báo lỗi và giữ nguyên phiếu/kho.
 4. M4 tải lại báo cáo, đối chiếu tổng chi với tổng tiền các phiếu trong cùng khoảng ngày.
 5. Thử phiếu khác có đủ tồn để xóa; đối chiếu chi tiết, kho và tổng chi sau xóa.
+
+Đây là kịch bản nghiệm thu chung đề nghị, không phải kết quả thủ công đã thực hiện. Ghi lại mã thuốc, mã phiếu/hóa đơn, tồn trước/sau, khoảng ngày báo cáo, kết quả và người kiểm tra. M1 nhận đúng bản bàn giao rồi chạy lại trên môi trường của nhóm.
