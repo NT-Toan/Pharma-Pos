@@ -33,11 +33,20 @@ public sealed class frmTaoHoaDon : Form
         ForeColor = GiaoDienChung.ChuPhu
     };
     private readonly Label lblTongTien = TaoNhanTien(true);
+    private readonly Label lblTongTienDaLuu = TaoNhanTien();
+    private readonly Label lblNhanTienKhach = TaoNhanTruong("Tiền khách đưa:");
     private readonly Label lblTienThua = TaoNhanTien();
+    private readonly Label lblNhanTienThua = TaoNhanTruong("Tiền thừa:");
     private readonly Label lblTrangThai = new() { AutoSize = true, ForeColor = GiaoDienChung.ChuPhu };
     private readonly Button btnLuu = new() { Text = "Lưu hóa đơn", AutoSize = true };
     private readonly HoaDon? hoaDonSua;
     private readonly Dictionary<string, int> tonKhoCongLai = new(StringComparer.OrdinalIgnoreCase);
+    private decimal tongTienDaLuu;
+    private decimal tongTienHienTai;
+    private string? dieuChinhDaLuuGanNhat;
+    private decimal tongTienTruocDieuChinhGanNhat;
+    private decimal tongTienSauDieuChinhGanNhat;
+    private bool coDieuChinhDaLuu;
     private NhanVien? nhanVien;
     private KhachHang? khachHang;
     private bool khachLe = true;
@@ -46,10 +55,12 @@ public sealed class frmTaoHoaDon : Form
     public frmTaoHoaDon(HoaDon? hoaDonCanSua = null)
     {
         hoaDonSua = hoaDonCanSua;
+        tongTienDaLuu = hoaDonSua?.TongTien ?? 0m;
         Text = hoaDonSua == null ? "Lập hóa đơn bán hàng" : $"Sửa hóa đơn {hoaDonSua.MaHD}";
         StartPosition = FormStartPosition.CenterParent;
         MinimumSize = new Size(900, 600);
         Size = new Size(1100, 760);
+        WindowState = FormWindowState.Maximized;
         Font = GiaoDienChung.PhongChu;
         BackColor = GiaoDienChung.Nen;
 
@@ -81,6 +92,40 @@ public sealed class frmTaoHoaDon : Form
         if (hoaDonSua != null)
             NapHoaDonCanSua(hoaDonSua);
         TinhVaHienThi();
+    }
+
+    private void GhiNhanDieuChinh(decimal tongTruoc, decimal tongSau)
+    {
+        tongTienTruocDieuChinhGanNhat = tongTruoc;
+        tongTienSauDieuChinhGanNhat = tongSau;
+        coDieuChinhDaLuu = true;
+        decimal chenhLech = tongSau - tongTruoc;
+        dieuChinhDaLuuGanNhat = chenhLech < 0
+            ? $"{tongTruoc:N2} → {tongSau:N2} (giảm {-chenhLech:N2})"
+            : chenhLech > 0
+                ? $"{tongTruoc:N2} → {tongSau:N2} (tăng {chenhLech:N2})"
+                : $"{tongTruoc:N2} → {tongSau:N2} (không đổi)";
+    }
+
+    private static string TaoThongTinDieuChinh(decimal tongCu, decimal tongMoi)
+    {
+        decimal chenhLech = tongMoi - tongCu;
+        string thongTin = $"Tổng trước: {tongCu:N2} đ\nTổng sau: {tongMoi:N2} đ";
+        if (chenhLech > 0)
+            return $"{thongTin}\nKhách cần thanh toán thêm: {chenhLech:N2} đ";
+        if (chenhLech < 0)
+            return $"{thongTin}\nTiền cần hoàn khách: {-chenhLech:N2} đ";
+        return $"{thongTin}\nKhông phát sinh thu thêm hoặc hoàn tiền.";
+    }
+
+    private string TaoThongTinDieuChinhChoLuu(decimal tongCu, decimal tongMoi)
+    {
+        if (tongMoi != tongCu)
+            GhiNhanDieuChinh(tongCu, tongMoi);
+
+        return TaoThongTinDieuChinh(
+            coDieuChinhDaLuu ? tongTienTruocDieuChinhGanNhat : tongCu,
+            coDieuChinhDaLuu ? tongTienSauDieuChinhGanNhat : tongMoi);
     }
 
     private Control TaoKhungThongTin()
@@ -146,6 +191,7 @@ public sealed class frmTaoHoaDon : Form
         dgvChiTiet.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
         dgvChiTiet.BackgroundColor = GiaoDienChung.MatTrang;
         dgvChiTiet.RowHeadersVisible = false;
+        dgvChiTiet.ScrollBars = ScrollBars.Vertical;
         dgvChiTiet.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
         dgvChiTiet.MultiSelect = false;
         dgvChiTiet.Columns.Add(new DataGridViewTextBoxColumn { Name = "MaThuoc", HeaderText = "Mã thuốc", ReadOnly = true, FillWeight = 75 });
@@ -172,13 +218,13 @@ public sealed class frmTaoHoaDon : Form
         var tongTien = new TableLayoutPanel
         {
             Dock = DockStyle.Top,
-            Height = 300,
+            Height = 270,
             ColumnCount = 2,
-            RowCount = 8,
+            RowCount = 9,
             Padding = new Padding(14),
             BackColor = GiaoDienChung.MatTrang
         };
-        for (int i = 0; i < 8; i++)
+        for (int i = 0; i < 9; i++)
             tongTien.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         tongTien.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 65));
         tongTien.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 35));
@@ -187,16 +233,18 @@ public sealed class frmTaoHoaDon : Form
         ThemDongTong(tongTien, 2, "Giảm giá hóa đơn:", lblGiamHoaDon);
         ThemDongTong(tongTien, 3, "CTKM hóa đơn / mức giảm:", lblLoaiKhuyenMaiHoaDon);
         ThemDongTong(tongTien, 4, "TỔNG THANH TOÁN:", lblTongTien);
-        ThemDongTong(tongTien, 5, "Tiền khách đưa:", nudTienKhachDua);
-        ThemDongTong(tongTien, 6, "Tiền thừa:", lblTienThua);
+        ThemDongTong(tongTien, 5, TaoNhanTruong("Tổng đã lưu / điều chỉnh:"), lblTongTienDaLuu);
+        ThemDongTong(tongTien, 6, lblNhanTienKhach, nudTienKhachDua);
+        ThemDongTong(tongTien, 7, lblNhanTienThua, lblTienThua);
         tongTien.Controls.Add(new Label
         {
-            Text = "Tiền khách đưa chỉ dùng để đối chiếu; schema hiện tại không lưu khoản thanh toán.",
+            Text = "Tiền khách đưa / thu thêm chỉ dùng để đối chiếu; schema hiện tại không lưu khoản thanh toán.",
             AutoSize = true,
             ForeColor = GiaoDienChung.ChuPhu,
             Padding = new Padding(0, 5, 0, 0)
-        }, 0, 7);
-        tongTien.SetColumnSpan(tongTien.GetControlFromPosition(0, 7)!, 2);
+        }, 0, 8);
+        tongTien.SetColumnSpan(tongTien.GetControlFromPosition(0, 8)!, 2);
+        lblNhanTienKhach.Text = hoaDonSua == null ? "Tiền khách đưa:" : "Tiền khách đưa thêm:";
         return tongTien;
     }
 
@@ -287,10 +335,74 @@ public sealed class frmTaoHoaDon : Form
         if (dgvChiTiet.SelectedRows.Count == 0)
             return;
 
+        if (hoaDonSua != null && chiTiet.Count <= 1)
+        {
+            MessageBox.Show("Hóa đơn phải còn ít nhất một loại thuốc.", "Không thể xóa dòng cuối",
+                MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return;
+        }
+
         DongHoaDonDuThao dong = (DongHoaDonDuThao)dgvChiTiet.SelectedRows[0].Tag!;
+        int viTri = chiTiet.IndexOf(dong);
         chiTiet.Remove(dong);
         HienThiChiTiet();
         TinhVaHienThi();
+
+        if (hoaDonSua == null)
+            return;
+
+        decimal chenhLech = tongTienHienTai - tongTienDaLuu;
+        if (chenhLech > 0 && nudTienKhachDua.Value < chenhLech)
+        {
+            chiTiet.Insert(Math.Clamp(viTri, 0, chiTiet.Count), dong);
+            HienThiChiTiet();
+            TinhVaHienThi();
+            MessageBox.Show($"Khách cần thanh toán thêm {chenhLech:N2} đ. Tiền khách đưa thêm chưa đủ.",
+                "Chưa đủ tiền", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return;
+        }
+
+        KetQuaLuuHoaDon ketQua = hoaDonBUS.SuaHoaDon(
+            hoaDonSua,
+            nhanVien!,
+            khachLe ? null : khachHang,
+            dtpNgayLap.Value.Date,
+            txtVoucher.Text,
+            chiTiet);
+        if (!ketQua.ThanhCong)
+        {
+            chiTiet.Insert(Math.Clamp(viTri, 0, chiTiet.Count), dong);
+            HienThiChiTiet();
+            TinhVaHienThi();
+            MessageBox.Show(ketQua.ThongBao, "Không thể cập nhật tồn kho",
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
+            return;
+        }
+
+        decimal tongTienTruocDieuChinh = tongTienDaLuu;
+        decimal tienThuThem = Math.Max(0, chenhLech);
+        decimal tienHoanKhach = Math.Max(0, -chenhLech);
+        decimal tienThua = Math.Max(0, nudTienKhachDua.Value - tienThuThem);
+        GhiNhanDieuChinh(tongTienTruocDieuChinh, tongTienHienTai);
+        tongTienDaLuu = tongTienHienTai;
+        tonKhoCongLai.Clear();
+        foreach (DongHoaDonDuThao dongConLai in chiTiet)
+        {
+            tonKhoCongLai.TryGetValue(dongConLai.Thuoc.MaThuoc, out int soLuong);
+            tonKhoCongLai[dongConLai.Thuoc.MaThuoc] = checked(soLuong + dongConLai.SoLuong);
+        }
+        nudTienKhachDua.Value = 0;
+        TinhVaHienThi();
+        if (tienHoanKhach > 0)
+        {
+            lblNhanTienThua.Text = "Tiền cần hoàn khách:";
+            lblTienThua.Text = tienHoanKhach.ToString("N2");
+        }
+        lblTrangThai.Text = tienThuThem > 0
+            ? $"Đã cập nhật hóa đơn. Thu thêm {tienThuThem:N2} đ; tiền thừa cần trả {tienThua:N2} đ."
+            : tienHoanKhach > 0
+                ? $"Đã cập nhật hóa đơn. Cần hoàn khách {tienHoanKhach:N2} đ."
+                : "Đã cập nhật hóa đơn và tồn kho; không phát sinh thu thêm hoặc hoàn tiền.";
     }
 
     private void KiemTraSoLuong(object? sender, DataGridViewCellValidatingEventArgs e)
@@ -387,6 +499,16 @@ public sealed class frmTaoHoaDon : Form
                 ? $"KMHoaDon - {ketQua.MaCTKMHD} ({ketQua.PhanTramGiamHoaDon:0.##}%; mốc {ketQua.MucTienHD:N2} đ)"
                 : "Không áp dụng";
         lblTongTien.Text = ketQua.TongTien.ToString("N2");
+        tongTienHienTai = ketQua.TongTien;
+        decimal chenhLech = tongTienHienTai - tongTienDaLuu;
+        string hienChenhLech = chenhLech > 0
+            ? $"+{chenhLech:N2}"
+            : chenhLech < 0
+                ? chenhLech.ToString("N2")
+                : 0m.ToString("N2");
+        lblTongTienDaLuu.Text = chenhLech == 0 && dieuChinhDaLuuGanNhat != null
+            ? dieuChinhDaLuuGanNhat
+            : $"{tongTienDaLuu:N2} / {hienChenhLech}";
         foreach (DataGridViewRow row in dgvChiTiet.Rows)
         {
             if (row.Tag is DongHoaDonDuThao dong)
@@ -435,9 +557,16 @@ public sealed class frmTaoHoaDon : Form
             return;
         }
 
-        if (nudTienKhachDua.Value < ketQua.TongTien)
+        decimal tienCanThu = hoaDonSua == null
+            ? ketQua.TongTien
+            : Math.Max(0, ketQua.TongTien - tongTienDaLuu);
+        if (nudTienKhachDua.Value < tienCanThu)
         {
-            MessageBox.Show("Tiền khách đưa không được nhỏ hơn tổng thanh toán.", "Chưa đủ tiền", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            MessageBox.Show(
+                hoaDonSua == null
+                    ? "Tiền khách đưa không được nhỏ hơn tổng thanh toán."
+                    : $"Khách cần thanh toán thêm {tienCanThu:N2} đ. Tiền khách đưa thêm chưa đủ.",
+                "Chưa đủ tiền", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             return;
         }
 
@@ -450,8 +579,13 @@ public sealed class frmTaoHoaDon : Form
             return;
         }
 
+        decimal tongCuTruocKhiLuu = tongTienDaLuu;
+        decimal chenhLechLuu = hoaDonSua == null ? ketQua.TongTien : ketQua.TongTien - tongCuTruocKhiLuu;
+        string doiSoatTien = hoaDonSua == null
+            ? $"Tiền khách đưa: {nudTienKhachDua.Value:N2} đ\nTiền thừa: {nudTienKhachDua.Value - ketQua.TongTien:N2} đ"
+            : TaoThongTinDieuChinhChoLuu(tongCuTruocKhiLuu, ketQua.TongTien);
         MessageBox.Show(
-            $"{ketQuaLuu.ThongBao}\nMã hóa đơn: {ketQuaLuu.MaHD}\nTiền khách đưa: {nudTienKhachDua.Value:N2} đ\nTiền thừa: {nudTienKhachDua.Value - ketQua.TongTien:N2} đ",
+            $"{ketQuaLuu.ThongBao}\nMã hóa đơn: {ketQuaLuu.MaHD}\n{doiSoatTien}",
             "Hoàn tất bán hàng", MessageBoxButtons.OK, MessageBoxIcon.Information);
         DialogResult = DialogResult.OK;
         Close();
@@ -487,6 +621,11 @@ public sealed class frmTaoHoaDon : Form
     private static void ThemDongTong(TableLayoutPanel bang, int dong, string tieuDe, Control giaTri)
     {
         var nhan = TaoNhanTruong(tieuDe);
+        ThemDongTong(bang, dong, nhan, giaTri);
+    }
+
+    private static void ThemDongTong(TableLayoutPanel bang, int dong, Label nhan, Control giaTri)
+    {
         nhan.Anchor = AnchorStyles.Left | AnchorStyles.Right;
         bang.Controls.Add(nhan, 0, dong);
         bang.Controls.Add(giaTri, 1, dong);
@@ -531,10 +670,18 @@ public sealed class frmTaoHoaDon : Form
 
     private void HienThiTienThua()
     {
-        if (decimal.TryParse(lblTongTien.Text, out decimal tongTien) && nudTienKhachDua.Value >= tongTien)
-            lblTienThua.Text = (nudTienKhachDua.Value - tongTien).ToString("N2");
+        decimal chenhLech = tongTienHienTai - tongTienDaLuu;
+        if (hoaDonSua != null && chenhLech < 0)
+        {
+            lblNhanTienThua.Text = "Tiền cần hoàn khách:";
+            lblTienThua.Text = (-chenhLech).ToString("N2");
+        }
         else
-            lblTienThua.Text = "0,00";
+        {
+            lblNhanTienThua.Text = "Tiền thừa:";
+            decimal tienCanThu = hoaDonSua == null ? tongTienHienTai : Math.Max(0, chenhLech);
+            lblTienThua.Text = Math.Max(0, nudTienKhachDua.Value - tienCanThu).ToString("N2");
+        }
     }
 
     private void InHoaDonNhap()

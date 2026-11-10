@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -105,10 +105,21 @@ internal static partial class Program
             danhSach.Rows[0].Cells["SoLuong"].Value = "3";
             form.GetType().GetMethod("CapNhatSoLuong", BindingFlags.Instance | BindingFlags.NonPublic)!
                 .Invoke(form, [0]);
-            LayTruong<NumericUpDown>(form, "nudTienKhachDua").Value = 1000;
+            NumericUpDown tienDuaThem = LayTruong<NumericUpDown>(form, "nudTienKhachDua");
+            tienDuaThem.Value = 99;
             Check(LayTruong<Label>(form, "lblTongTien").Text == 300m.ToString("N2"),
                 "Form sua hoa don tinh lai tien sau khi doi so luong");
 
+            Task<string> thongBaoChuaDu = DongThongBaoCuaTienTrinh();
+            LayTruong<Button>(form, "btnLuu").PerformClick();
+            Check(thongBaoChuaDu.GetAwaiter().GetResult() == "Chưa đủ tiền" &&
+                  hoaDonBUS.LayChiTiet(hoaDon.MaHD).Cast<CTHoaDon>().Single().SoLuong == 2,
+                "Form sua hoa don chi yeu cau thu them phan chenh lech va khong luu neu thieu");
+
+            tienDuaThem.Value = 100;
+            Check(LayTruong<Label>(form, "lblTongTienDaLuu").Text ==
+                  $"{200m:N2} / +{100m:N2}",
+                "Form sua hoa don hien tong cu va tien can thu them");
             Task<string> thongBao = DongThongBaoCuaTienTrinh();
             LayTruong<Button>(form, "btnLuu").PerformClick();
             string tieuDe = thongBao.GetAwaiter().GetResult();

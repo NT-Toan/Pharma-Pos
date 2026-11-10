@@ -110,6 +110,58 @@ internal static partial class Program
         Check(Ton("TH0001") == 7 && Ton("TH0002") == 19,
             "Sua hoa don hoan ton cu va tru ton moi dung mot lan");
 
+        HoaDon hoaDonSauSua = bus.LayTatCa().Cast<HoaDon>().Single(hoaDon => hoaDon.MaHD == tao.MaHD);
+        using (var formSua = new frmTaoHoaDon(hoaDonSauSua)
+        {
+            Opacity = 0,
+            ShowInTaskbar = false
+        })
+        {
+            formSua.Show();
+            Application.DoEvents();
+            DataGridView dgv = (DataGridView)formSua.Controls.Find("dgvChiTiet", true).Single();
+            DataGridViewRow dongThuocXoa = dgv.Rows.Cast<DataGridViewRow>()
+                .Single(row => row.Cells["MaThuoc"].Value?.ToString() == "TH0002");
+            dongThuocXoa.Selected = true;
+            typeof(frmTaoHoaDon).GetMethod("XoaDong", BindingFlags.Instance | BindingFlags.NonPublic)!
+                .Invoke(formSua, null);
+            Application.DoEvents();
+
+            List<CTHoaDon> chiTietSauXoa = bus.LayChiTiet(tao.MaHD).Cast<CTHoaDon>().ToList();
+            Label trangThaiSua = (Label)typeof(frmTaoHoaDon)
+                .GetField("lblTrangThai", BindingFlags.Instance | BindingFlags.NonPublic)!
+                .GetValue(formSua)!;
+            Label tongDieuChinh = (Label)typeof(frmTaoHoaDon)
+                .GetField("lblTongTienDaLuu", BindingFlags.Instance | BindingFlags.NonPublic)!
+                .GetValue(formSua)!;
+            Label tienHoan = (Label)typeof(frmTaoHoaDon)
+                .GetField("lblTienThua", BindingFlags.Instance | BindingFlags.NonPublic)!
+                .GetValue(formSua)!;
+            Label nhanTienHoan = (Label)typeof(frmTaoHoaDon)
+                .GetField("lblNhanTienThua", BindingFlags.Instance | BindingFlags.NonPublic)!
+                .GetValue(formSua)!;
+            bus.TaiLai();
+            HoaDon hoaDonSauXoa = bus.LayTatCa().Cast<HoaDon>().Single(hoaDon => hoaDon.MaHD == tao.MaHD);
+            Check(chiTietSauXoa.Count == 1 && chiTietSauXoa[0].MaThuoc == "TH0001" &&
+                  Ton("TH0001") == 7 && Ton("TH0002") == 20 &&
+                  hoaDonSauXoa.TongTien == 270m,
+                "Xoa dong giam tong hoa don va cap nhat ton kho ngay");
+            Check(trangThaiSua.Text.Contains("Cần hoàn khách ", StringComparison.Ordinal),
+                $"Xoa dong hien ro tien can hoan (trang thai: {trangThaiSua.Text})");
+            Check(tongDieuChinh.Text.Contains("giảm ", StringComparison.Ordinal) &&
+                  tongDieuChinh.Text.Contains($"{200m:N2}", StringComparison.Ordinal) &&
+                  nhanTienHoan.Text == "Tiền cần hoàn khách:" &&
+                  tienHoan.Text == $"{200m:N2}",
+                "Xoa dong luu lai tong truoc-sau va hien tien can hoan");
+            string thongTinLuuLanSau = (string)typeof(frmTaoHoaDon)
+                .GetMethod("TaoThongTinDieuChinhChoLuu", BindingFlags.Instance | BindingFlags.NonPublic)!
+                .Invoke(formSua, [hoaDonSauXoa.TongTien, hoaDonSauXoa.TongTien])!;
+            Check(thongTinLuuLanSau.Contains($"Tổng trước: {470m:N2}", StringComparison.Ordinal) &&
+                  thongTinLuuLanSau.Contains($"Tổng sau: {270m:N2}", StringComparison.Ordinal) &&
+                  thongTinLuuLanSau.Contains($"Tiền cần hoàn khách: {200m:N2}", StringComparison.Ordinal),
+                "Luu lai khong doi van hien tong cu va tong sau xoa dong");
+        }
+
         KetQuaLuuHoaDon huy = bus.HuyHoaDon(tao.MaHD);
         Check(huy.ThanhCong && Convert.ToInt32(new MyConnection().LayGiaTri("SELECT COUNT(*) FROM HOADON")) == 0 &&
             Convert.ToInt32(new MyConnection().LayGiaTri("SELECT COUNT(*) FROM CTHD")) == 0,

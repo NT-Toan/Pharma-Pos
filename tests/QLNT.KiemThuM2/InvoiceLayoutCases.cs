@@ -1,4 +1,4 @@
-using System.Reflection;
+﻿using System.Reflection;
 using QLNT.GUI;
 
 internal static partial class Program
@@ -33,6 +33,20 @@ internal static partial class Program
             "Bang tong tien khong de len thong tin hoac nut luu");
         Check(khung.GetControlFromPosition(0, 1)!.Height >= 40,
             "Danh sach thuoc van con cho hien thi");
+
+        DataGridView dgv = (DataGridView)form.Controls.Find("dgvChiTiet", true).Single();
+        dgv.Rows.Add(6);
+        Application.DoEvents();
+        Check(dgv.Rows[5].Displayed,
+            "Dong thuoc thu 6 hien thi ma khong can cuon");
+
+        form.Size = new Size(900, 600);
+        for (int i = 0; i < 30; i++)
+            dgv.Rows.Add($"T{i}", $"Thuoc {i}", 1, "10.000", "0", "Khong", "10.000");
+        Application.DoEvents();
+        Check(dgv.ScrollBars.HasFlag(ScrollBars.Vertical) &&
+              dgv.DisplayedRowCount(false) < dgv.Rows.Count,
+            "Danh sach thuoc co the cuon doc khi form nho va co nhieu dong");
 
         foreach (string ten in new[] { "lblTongGoc", "lblGiamSanPham", "lblGiamHoaDon", "lblTongTien", "lblTienThua" })
         {

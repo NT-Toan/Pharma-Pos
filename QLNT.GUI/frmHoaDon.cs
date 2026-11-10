@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 
 namespace QLNT.GUI;
 
@@ -261,8 +261,8 @@ public sealed class frmHoaDon : Form
         }
 
         using var form = new frmTaoHoaDon(hoaDon);
-        if (form.ShowDialog(this) == DialogResult.OK)
-            TaiDanhSach();
+        form.ShowDialog(this);
+        TaiDanhSach();
     }
 
     private void HuyHoaDon()
