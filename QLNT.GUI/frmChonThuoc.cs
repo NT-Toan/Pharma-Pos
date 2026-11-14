@@ -19,11 +19,13 @@ public sealed class frmChonThuoc : Form
     private readonly Button btnChon = new() { Text = "Chọn", AutoSize = true, Enabled = false };
     private readonly Func<Thuoc, int> laySoLuongToiDa;
 
-    public Thuoc? ThuocDuocChon { get; private set; }
-    public int SoLuongDuocChon { get; private set; }
+    public static Thuoc? ThuocDuocChon { get; private set; }
+    public static int SoLuongDuocChon { get; private set; }
 
     public frmChonThuoc(Func<Thuoc, int>? laySoLuongToiDa = null)
     {
+        ThuocDuocChon = null;
+        SoLuongDuocChon = 0;
         this.laySoLuongToiDa = laySoLuongToiDa ?? (thuoc => thuoc.SoLuong);
         Text = "Chọn thuốc";
         StartPosition = FormStartPosition.CenterParent;
@@ -86,6 +88,12 @@ public sealed class frmChonThuoc : Form
         {
             ThuocBUS.TaiLai();
             TimKiem();
+        };
+        FormClosed += (_, _) =>
+        {
+            if (DialogResult == DialogResult.OK) return;
+            ThuocDuocChon = null;
+            SoLuongDuocChon = 0;
         };
     }
 
@@ -156,7 +164,6 @@ public sealed class frmChonThuoc : Form
             return;
         }
 
-        ThuocDuocChon = (Thuoc)lvThuoc.SelectedItems[0].Tag!;
         if (nudSoLuong.Value <= 0)
         {
             MessageBox.Show("Số lượng phải lớn hơn 0.", "Số lượng không hợp lệ",
@@ -164,6 +171,7 @@ public sealed class frmChonThuoc : Form
             return;
         }
 
+        ThuocDuocChon = (Thuoc)lvThuoc.SelectedItems[0].Tag!;
         SoLuongDuocChon = decimal.ToInt32(nudSoLuong.Value);
         DialogResult = DialogResult.OK;
         Close();

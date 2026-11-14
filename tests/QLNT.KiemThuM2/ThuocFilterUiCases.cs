@@ -13,8 +13,8 @@ internal static partial class Program
         {
             var cacThuoc = new ArrayList
             {
-                new Thuoc { MaThuoc = "TH0001", TenThuoc = "Paracetamol 500mg", MaLoai = "LT0001", DonGia = 5000 },
-                new Thuoc { MaThuoc = "TH0002", TenThuoc = "Paracetamol 650mg", MaLoai = "LT0001", DonGia = 20000 },
+                new Thuoc { MaThuoc = "TH0001", TenThuoc = "Paracetamol 500mg", MaLoai = "LT0001", DonGia = 5000, SoLuong = 5, HSD = new DateTime(2026, 11, 30) },
+                new Thuoc { MaThuoc = "TH0002", TenThuoc = "Paracetamol 650mg", MaLoai = "LT0001", DonGia = 20000, SoLuong = 3, HSD = new DateTime(2027, 12, 31) },
                 new Thuoc { MaThuoc = "TH0003", TenThuoc = "Ibuprofen", MaLoai = "LT0002", DonGia = 10000 },
                 new Thuoc { MaThuoc = "TH0004", TenThuoc = "Vitamin C", MaLoai = "LT0003", DonGia = 30000 },
                 new Thuoc { MaThuoc = "TH0005", TenThuoc = "Para Extra", MaLoai = "LT0002", DonGia = 25000 },
@@ -45,6 +45,15 @@ internal static partial class Program
             var loi = O<Label>("lblLoiLocThuoc");
             var soLuong = O<Label>("lblSoLuongThuoc");
             var danhSach = O<ListView>("lvThuoc");
+            Check(host.Controls.Find("cboLocTruongThem", true).Length == 1 &&
+                host.Controls.Find("cboLocToanTuThem", true).Length == 1 &&
+                host.Controls.Find("txtLocGiaTriThem", true).Length == 1 &&
+                host.Controls.Find("chkLocNot", true).Length == 1,
+                "Form Thuoc co dieu kien bo sung va NOT");
+            var truongThem = O<ComboBox>("cboLocTruongThem");
+            var toanTuThem = O<ComboBox>("cboLocToanTuThem");
+            var giaTriThem = O<TextBox>("txtLocGiaTriThem");
+            var not = O<CheckBox>("chkLocNot");
             string[] CacMa() => danhSach.Items.Cast<ListViewItem>().Select(d => d.Text).ToArray();
             void Tim() { tim.PerformClick(); Application.DoEvents(); }
             void XoaLoc() { xoaLoc.PerformClick(); Application.DoEvents(); }
@@ -97,12 +106,42 @@ internal static partial class Program
             Application.DoEvents();
             Check(enter.SuppressKeyPress && CacMa().SequenceEqual(["TH0003"]), "Enter trong o loc cung chay Tim");
             XoaLoc();
+            truongThem.SelectedIndex = 2; toanTuThem.SelectedItem = "Chứa";
+            giaTriThem.Text = "Para"; not.Checked = true; Tim();
+            Check(CacMa().SequenceEqual(["TH0003", "TH0004", "TH0006"]),
+                "Form Thuoc loc NOT ten chua Para");
+            XoaLoc(); truongThem.SelectedIndex = 4; toanTuThem.SelectedItem = "<>";
+            giaTriThem.Text = "10000"; Tim();
+            Check(CacMa().SequenceEqual(["TH0001", "TH0002", "TH0004", "TH0005", "TH0006"]),
+                "Form Thuoc loc don gia khac 10000");
+            XoaLoc(); ten.Text = "Para"; truongThem.SelectedIndex = 4;
+            toanTuThem.SelectedItem = ">"; giaTriThem.Text = "20000"; Tim();
+            Check(CacMa().SequenceEqual(["TH0005"]), "Form Thuoc AND ten va gia lon hon");
+            noi.SelectedIndex = 1; Tim();
+            Check(CacMa().SequenceEqual(["TH0001", "TH0002", "TH0004", "TH0005"]),
+                "Form Thuoc OR ten va gia lon hon");
+            giaTriThem.Text = "khong la so"; Tim();
+            Check(loi.Text.Contains("Đơn giá") && CacMa().SequenceEqual(["TH0001", "TH0002", "TH0004", "TH0005"]),
+                "Form Thuoc bao loi gia tri sai va giu ket qua cu");
+            XoaLoc(); truongThem.SelectedIndex = 5; toanTuThem.SelectedItem = ">";
+            giaTriThem.Text = "3"; Tim();
+            Check(CacMa().SequenceEqual(["TH0001"]), "Form Thuoc loc ton kho dang so nguyen");
+            XoaLoc(); truongThem.SelectedIndex = 6; toanTuThem.SelectedItem = ">=";
+            giaTriThem.Text = "01/01/2027"; Tim();
+            Check(CacMa().SequenceEqual(["TH0002"]), "Form Thuoc loc han dung dang ngay");
+            giaTriThem.Text = "sai ngay"; Tim();
+            Check(loi.Text.Contains("Hạn dùng") && CacMa().SequenceEqual(["TH0002"]),
+                "Form Thuoc bao loi han dung sai va giu ket qua cu");
+            XoaLoc();
+            Check(truongThem.SelectedIndex == 0 && giaTriThem.Text == "" && !not.Checked && danhSach.Items.Count == 6,
+                "Form Thuoc xoa dieu kien bo sung");
             Check(cacThuoc.Count == 6 && ((Thuoc)cacThuoc[0]!).DonGia == 5000 &&
                 ReferenceEquals(cacheThuoc.GetValue(null), cacThuoc), "Tim va xoa bo loc khong xoa thuoc hoac doi cache");
             host.Size = host.MinimumSize; host.PerformLayout(); Application.DoEvents();
             var nhom = O<GroupBox>("grpLocThuoc");
             Check(nhom.Bottom <= danhSach.Top && danhSach.Height > 100 &&
-                new Control[] { ma, ten, loai, noi, giaTu, giaDen, tim, xoaLoc }.All(c =>
+                new Control[] { ma, ten, loai, noi, giaTu, giaDen, truongThem, toanTuThem, giaTriThem, not,
+                    tim, xoaLoc }.All(c =>
                     c.Width > 0 && c.Height > 0 && c.Parent!.ClientRectangle.Contains(c.Bounds)),
                 "Bo loc va bang khong chong len nhau tai kich thuoc nho nhat");
             ChupAnh("thuoc-filter-850.png");

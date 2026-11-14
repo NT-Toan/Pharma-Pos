@@ -83,7 +83,8 @@ public class ThuocBUS
         string? maLoai = null,
         decimal? giaTu = null,
         decimal? giaDen = null,
-        PhepNoi noi = PhepNoi.And)
+        PhepNoi noi = PhepNoi.And,
+        DieuKien? dieuKienThem = null)
     {
         if (noi != PhepNoi.And && noi != PhepNoi.Or)
             throw new ArgumentOutOfRangeException(nameof(noi), "Chỉ được chọn AND hoặc OR.");
@@ -111,23 +112,41 @@ public class ThuocBUS
             });
 
         ArrayList danhSach = LayDanhSach();
+        bool coDieuKienCoBan = dieuKienChu.Count > 0 || dieuKienGia.Count > 0;
+        ArrayList ketQuaCoBan;
         if (dieuKienChu.Count == 0)
-            return BoLoc.Loc(danhSach, dieuKienGia, PhepNoi.And);
+            ketQuaCoBan = BoLoc.Loc(danhSach, dieuKienGia, PhepNoi.And);
+        else
+        {
+            ArrayList theoChu = BoLoc.Loc(danhSach, dieuKienChu, noi);
+            if (dieuKienGia.Count == 0)
+                ketQuaCoBan = theoChu;
+            else if (noi == PhepNoi.And)
+                ketQuaCoBan = BoLoc.Loc(theoChu, dieuKienGia, PhepNoi.And);
+            else
+            {
+                // OR: đúng ít nhất một trường chữ HOẶC nằm trong toàn bộ khoảng giá.
+                ArrayList theoGia = BoLoc.Loc(danhSach, dieuKienGia, PhepNoi.And);
+                ketQuaCoBan = new ArrayList();
+                foreach (Thuoc thuoc in danhSach)
+                    if (theoChu.Contains(thuoc) || theoGia.Contains(thuoc))
+                        ketQuaCoBan.Add(thuoc);
+            }
+        }
 
-        ArrayList theoChu = BoLoc.Loc(danhSach, dieuKienChu, noi);
-        if (dieuKienGia.Count == 0)
-            return theoChu;
-        if (noi == PhepNoi.And)
-            return BoLoc.Loc(theoChu, dieuKienGia, PhepNoi.And);
+        if (dieuKienThem == null)
+            return ketQuaCoBan;
 
-        // OR: đúng ít nhất một trường chữ HOẶC nằm trong toàn bộ khoảng giá.
-        ArrayList theoGia = BoLoc.Loc(danhSach, dieuKienGia, PhepNoi.And);
+        ArrayList theoDieuKienThem = BoLoc.Loc(danhSach, [dieuKienThem], PhepNoi.And);
+        if (!coDieuKienCoBan)
+            return theoDieuKienThem;
+
         var ketQua = new ArrayList();
         foreach (Thuoc thuoc in danhSach)
-        {
-            if (theoChu.Contains(thuoc) || theoGia.Contains(thuoc))
+            if (noi == PhepNoi.And
+                ? ketQuaCoBan.Contains(thuoc) && theoDieuKienThem.Contains(thuoc)
+                : ketQuaCoBan.Contains(thuoc) || theoDieuKienThem.Contains(thuoc))
                 ketQua.Add(thuoc);
-        }
         return ketQua;
     }
 

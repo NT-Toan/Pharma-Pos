@@ -8,10 +8,11 @@ public sealed class frmChonNhaCungCap : Form
     private readonly TextBox txtTimKiem = new() { Dock = DockStyle.Fill };
     private readonly ListView lvNhaCungCap = new();
 
-    public NhaCungCap? NhaCungCapDuocChon { get; private set; }
+    public static NhaCungCap? NhaCungCapDuocChon { get; private set; }
 
     public frmChonNhaCungCap()
     {
+        NhaCungCapDuocChon = null;
         Text = "Chọn nhà cung cấp";
         StartPosition = FormStartPosition.CenterParent;
         MinimumSize = new Size(600, 400);
@@ -66,6 +67,11 @@ public sealed class frmChonNhaCungCap : Form
         {
             NhaCungCapBUS.TaiLai();
             TimKiem();
+        };
+        FormClosed += (_, _) =>
+        {
+            if (DialogResult != DialogResult.OK)
+                NhaCungCapDuocChon = null;
         };
     }
 

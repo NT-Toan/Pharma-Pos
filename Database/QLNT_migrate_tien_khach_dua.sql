@@ -1,0 +1,7 @@
+-- Chạy một lần trên QLNhaThuoc hiện có; hóa đơn cũ giữ NULL vì không có dữ liệu thanh toán lịch sử.
+IF COL_LENGTH('dbo.HOADON', 'TIENKHACHDUA') IS NULL
+BEGIN
+    ALTER TABLE dbo.HOADON
+    ADD TIENKHACHDUA DECIMAL(18,2) NULL
+        CONSTRAINT CK_HOADON_TIENKHACHDUA CHECK (TIENKHACHDUA IS NULL OR TIENKHACHDUA >= 0);
+END;

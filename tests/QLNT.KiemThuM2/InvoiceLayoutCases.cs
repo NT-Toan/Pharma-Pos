@@ -31,6 +31,8 @@ internal static partial class Program
         Check(bangTong.Top >= khung.GetControlFromPosition(0, 0)!.Bottom &&
               bangTong.Bottom <= khung.GetControlFromPosition(0, 3)!.Top,
             "Bang tong tien khong de len thong tin hoac nut luu");
+        Check(LayNhan("lblTienThua").Bottom <= bangTong.ClientSize.Height - bangTong.Padding.Bottom,
+            "Dong tien thua nam tron trong bang tong tien");
         Check(khung.GetControlFromPosition(0, 1)!.Height >= 40,
             "Danh sach thuoc van con cho hien thi");
 

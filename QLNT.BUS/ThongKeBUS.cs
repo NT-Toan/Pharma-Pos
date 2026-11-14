@@ -82,6 +82,60 @@ public class ThongKeBUS
         return dt;
     }
 
+    public DuLieuBieuDo TaoDuLieuBieuDo(DataTable bang, int loaiThongKe)
+    {
+        ArgumentNullException.ThrowIfNull(bang);
+        if (loaiThongKe is < 0 or > 5)
+            throw new ArgumentOutOfRangeException(nameof(loaiThongKe));
+
+        if (loaiThongKe <= 2)
+        {
+            var cot = bang.Rows.Cast<DataRow>().Select(row => new CotBieuDo(
+                Convert.ToString(row["Ky"]) ?? string.Empty,
+                Convert.ToDecimal(row["Thu"]), Convert.ToDecimal(row["Chi"]))).ToList();
+            bool coThu = cot.Any(diem => diem.GiaTriChinh > 0);
+            var tron = GopLatNho(cot.Select(diem => new LatBieuDo(diem.Nhan,
+                coThu ? diem.GiaTriChinh : diem.GiaTriPhu ?? 0m)));
+            string ky = loaiThongKe switch { 0 => "tháng", 1 => "quý", _ => "năm" };
+            return new DuLieuBieuDo
+            {
+                TieuDe = $"Thu và chi theo {ky}", TenDayChinh = "Thu", TenDayPhu = "Chi",
+                TieuDeTron = coThu ? $"Tỷ trọng thu theo {ky}" : $"Tỷ trọng chi theo {ky}",
+                Cot = cot, Tron = tron
+            };
+        }
+
+        string doiTuong = loaiThongKe switch
+        {
+            3 => "nhân viên", 4 => "khách hàng", _ => "sản phẩm"
+        };
+        var cacDong = bang.Rows.Cast<DataRow>()
+            .Where(row => !string.Equals(Convert.ToString(row["Ma"]), "TC", StringComparison.OrdinalIgnoreCase))
+            .Select(row => new LatBieuDo(Convert.ToString(row["Ten"]) ?? Convert.ToString(row["Ma"]) ?? string.Empty,
+                Convert.ToDecimal(row["TC"])))
+            .Where(diem => diem.GiaTri > 0)
+            .OrderByDescending(diem => diem.GiaTri).ToList();
+        var cotDoanhThu = cacDong.Take(10).Select(diem => new CotBieuDo(diem.Nhan, diem.GiaTri, null)).ToList();
+        return new DuLieuBieuDo
+        {
+            TieuDe = cacDong.Count > 10 ? $"10 {doiTuong} có doanh thu cao nhất" : $"Doanh thu theo {doiTuong}",
+            TenDayChinh = "Doanh thu",
+            TieuDeTron = $"Tỷ trọng doanh thu theo {doiTuong}",
+            Cot = cotDoanhThu, Tron = GopLatNho(cacDong)
+        };
+    }
+
+    private static IReadOnlyList<LatBieuDo> GopLatNho(IEnumerable<LatBieuDo> duLieu)
+    {
+        List<LatBieuDo> duong = duLieu.Where(diem => diem.GiaTri > 0).ToList();
+        if (duong.Count <= 8)
+            return duong;
+        List<LatBieuDo> lon = duong.OrderByDescending(diem => diem.GiaTri).Take(7).ToList();
+        decimal conLai = duong.Sum(diem => diem.GiaTri) - lon.Sum(diem => diem.GiaTri);
+        lon.Add(new LatBieuDo("Khác", conLai));
+        return lon;
+    }
+
     private static DataTable TaoBangThuChi(string tenKy)
     {
         DataTable dt = new();

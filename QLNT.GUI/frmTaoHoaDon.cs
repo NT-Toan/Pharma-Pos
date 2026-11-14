@@ -136,7 +136,7 @@ public sealed class frmTaoHoaDon : Form
             AutoSize = true,
             ColumnCount = 4,
             RowCount = 4,
-            Padding = new Padding(12),
+            Padding = new Padding(8),
             BackColor = GiaoDienChung.MatTrang
         };
         thongTin.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
@@ -218,13 +218,14 @@ public sealed class frmTaoHoaDon : Form
         var tongTien = new TableLayoutPanel
         {
             Dock = DockStyle.Top,
-            Height = 270,
+            AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink,
             ColumnCount = 2,
-            RowCount = 9,
-            Padding = new Padding(14),
+            RowCount = 8,
+            Padding = new Padding(8),
             BackColor = GiaoDienChung.MatTrang
         };
-        for (int i = 0; i < 9; i++)
+        for (int i = 0; i < 8; i++)
             tongTien.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         tongTien.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 65));
         tongTien.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 35));
@@ -236,14 +237,6 @@ public sealed class frmTaoHoaDon : Form
         ThemDongTong(tongTien, 5, TaoNhanTruong("Tổng đã lưu / điều chỉnh:"), lblTongTienDaLuu);
         ThemDongTong(tongTien, 6, lblNhanTienKhach, nudTienKhachDua);
         ThemDongTong(tongTien, 7, lblNhanTienThua, lblTienThua);
-        tongTien.Controls.Add(new Label
-        {
-            Text = "Tiền khách đưa / thu thêm chỉ dùng để đối chiếu; schema hiện tại không lưu khoản thanh toán.",
-            AutoSize = true,
-            ForeColor = GiaoDienChung.ChuPhu,
-            Padding = new Padding(0, 5, 0, 0)
-        }, 0, 8);
-        tongTien.SetColumnSpan(tongTien.GetControlFromPosition(0, 8)!, 2);
         lblNhanTienKhach.Text = hoaDonSua == null ? "Tiền khách đưa:" : "Tiền khách đưa thêm:";
         return tongTien;
     }
@@ -307,13 +300,13 @@ public sealed class frmTaoHoaDon : Form
             long conCoTheThem = (long)thuoc.SoLuong + hoanLai - (dongHienTai?.SoLuong ?? 0);
             return (int)Math.Clamp(conCoTheThem, 0, int.MaxValue);
         });
-        if (form.ShowDialog(this) != DialogResult.OK || form.ThuocDuocChon == null)
+        if (form.ShowDialog(this) != DialogResult.OK || frmChonThuoc.ThuocDuocChon == null)
             return;
 
-        Thuoc thuoc = form.ThuocDuocChon;
+        Thuoc thuoc = frmChonThuoc.ThuocDuocChon;
         DongHoaDonDuThao? dongCu = chiTiet.FirstOrDefault(d =>
             d.Thuoc.MaThuoc.Equals(thuoc.MaThuoc, StringComparison.OrdinalIgnoreCase));
-        int soLuongMoi = checked((dongCu?.SoLuong ?? 0) + form.SoLuongDuocChon);
+        int soLuongMoi = checked((dongCu?.SoLuong ?? 0) + frmChonThuoc.SoLuongDuocChon);
         tonKhoCongLai.TryGetValue(thuoc.MaThuoc, out int hoanLai);
         if ((thuoc.HSD.HasValue && thuoc.HSD.Value.Date < dtpNgayLap.Value.Date) ||
             soLuongMoi > (long)thuoc.SoLuong + hoanLai)
@@ -368,7 +361,8 @@ public sealed class frmTaoHoaDon : Form
             khachLe ? null : khachHang,
             dtpNgayLap.Value.Date,
             txtVoucher.Text,
-            chiTiet);
+            chiTiet,
+            nudTienKhachDua.Value);
         if (!ketQua.ThanhCong)
         {
             chiTiet.Insert(Math.Clamp(viTri, 0, chiTiet.Count), dong);
@@ -571,8 +565,8 @@ public sealed class frmTaoHoaDon : Form
         }
 
         KetQuaLuuHoaDon ketQuaLuu = hoaDonSua == null
-            ? hoaDonBUS.TaoHoaDon(nhanVien, khachLe ? null : khachHang, dtpNgayLap.Value.Date, txtVoucher.Text, chiTiet)
-            : hoaDonBUS.SuaHoaDon(hoaDonSua, nhanVien, khachLe ? null : khachHang, dtpNgayLap.Value.Date, txtVoucher.Text, chiTiet);
+            ? hoaDonBUS.TaoHoaDon(nhanVien, khachLe ? null : khachHang, dtpNgayLap.Value.Date, txtVoucher.Text, chiTiet, nudTienKhachDua.Value)
+            : hoaDonBUS.SuaHoaDon(hoaDonSua, nhanVien, khachLe ? null : khachHang, dtpNgayLap.Value.Date, txtVoucher.Text, chiTiet, nudTienKhachDua.Value);
         if (!ketQuaLuu.ThanhCong)
         {
             MessageBox.Show(ketQuaLuu.ThongBao, "Không thể lưu hóa đơn", MessageBoxButtons.OK, MessageBoxIcon.Error);
