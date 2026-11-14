@@ -90,6 +90,13 @@ public sealed class frmMain : Form
         ThemNut(danhSachMenu, "Thống kê", () => MoFormCon(new frmThongKe()));
         ThemNut(danhSachMenu, "Tham số", () => MoFormCon(new frmThamSo()));
 
+        // Web đặt thuốc dùng cùng SQL Server; cập nhật tồn khi quay lại WinForms.
+        Activated += (_, _) =>
+        {
+            if (formDangMo is frmThuoc formThuoc)
+                formThuoc.CapNhatTonTuDatabase();
+        };
+
         ChonNut(nutTrangChinh);
         MoTrangChinh();
     }

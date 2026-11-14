@@ -17,13 +17,18 @@ internal static partial class Program
         if (args.Contains("--picker-only") || args.Contains("--draft-only") ||
             args.Contains("--customer-filter-only") || args.Contains("--customer-picker-only") ||
             args.Contains("--invoice-layout-only") || args.Contains("--employee-picker-only") ||
-            args.Contains("--thuoc-filter-only") || args.Contains("--thuoc-filter-ui-only"))
+            args.Contains("--static-pickers-only") ||
+            args.Contains("--thuoc-filter-only") || args.Contains("--thuoc-filter-ui-only") ||
+            args.Contains("--invoice-filter-only") || args.Contains("--chart-only"))
         {
             try
             {
                 if (!args.Contains("--thuoc-filter-only")) Application.EnableVisualStyles();
                 if (args.Contains("--thuoc-filter-only")) KiemTraLocThuocNangCao();
+                else if (args.Contains("--chart-only")) KiemTraDuLieuBieuDo();
+                else if (args.Contains("--invoice-filter-only")) KiemTraLocHoaDonNangCao();
                 else if (args.Contains("--thuoc-filter-ui-only")) KiemTraGiaoDienLocThuoc();
+                else if (args.Contains("--static-pickers-only")) KiemTraChonThuocVaNhaCungCapStatic();
                 else if (args.Contains("--employee-picker-only")) KiemTraChonNhanVienStatic();
                 else if (args.Contains("--invoice-layout-only")) KiemTraBoCucTongTienHoaDon();
                 else if (args.Contains("--customer-picker-only")) KiemTraChonKhachHangStatic();
@@ -74,6 +79,12 @@ internal static partial class Program
                 Console.WriteLine($"PASS UI EDIT: {soCa} ca; database ung dung khong bi ghi du lieu.");
                 return 0;
             }
+            if (args.Contains("--web-order-only"))
+            {
+                KiemTraDonDatWeb();
+                Console.WriteLine($"PASS WEB ORDER: {soCa} ca; database ung dung khong bi ghi du lieu.");
+                return 0;
+            }
             KiemTraHoaDon();
             KiemTraBUSVaGiaoDich();
             KiemTraSuaXoa();
@@ -85,9 +96,13 @@ internal static partial class Program
             KiemTraLocDiaChiKhachHang();
             KiemTraChonKhachHangStatic();
             KiemTraChonNhanVienStatic();
+            KiemTraChonThuocVaNhaCungCapStatic();
             KiemTraBoCucTongTienHoaDon();
             KiemTraLocThuocNangCao();
+            KiemTraLocHoaDonNangCao();
+            KiemTraDuLieuBieuDo();
             KiemTraGiaoDienLocThuoc();
+            KiemTraDonDatWeb();
             Console.WriteLine($"PASS ALL: {soCa} ca; database ung dung khong bi ghi du lieu.");
             return 0;
         }
@@ -161,7 +176,10 @@ internal static partial class Program
                 MAVOUCHER VARCHAR(20) REFERENCES KM_VOUCHER(MAVOUCHER),
                 MACTKM_HD VARCHAR(10) REFERENCES CTKHUYENMAI(MACTKM),
                 MUCTIENHD DECIMAL(18,2),
-                TIENGIAM DECIMAL(18,2) NOT NULL DEFAULT 0 CHECK (TIENGIAM >= 0));
+                TIENGIAM DECIMAL(18,2) NOT NULL DEFAULT 0 CHECK (TIENGIAM >= 0),
+                TIENKHACHDUA DECIMAL(18,2) NULL CHECK (TIENKHACHDUA IS NULL OR TIENKHACHDUA >= 0),
+                PHUONGTHUCTT VARCHAR(12) NOT NULL DEFAULT 'TaiCuaHang',
+                TRANGTHAITT VARCHAR(15) NOT NULL DEFAULT 'DaThanhToan');
             CREATE TABLE CTHD (
                 MAHD VARCHAR(10) NOT NULL REFERENCES HOADON(MAHD),
                 MATHUOC VARCHAR(10) NOT NULL REFERENCES THUOC(MATHUOC),
@@ -181,6 +199,30 @@ internal static partial class Program
                 SOLUONG INT NOT NULL CHECK (SOLUONG > 0),
                 DONGIA DECIMAL(18,2) NOT NULL CHECK (DONGIA >= 0),
                 PRIMARY KEY (MATHUOC, MAPN));
+            CREATE TABLE DONDATTHUOC (
+                MADON INT IDENTITY(1,1) PRIMARY KEY,
+                HOTEN NVARCHAR(100) NOT NULL,
+                SDT VARCHAR(15) NOT NULL,
+                DIACHI NVARCHAR(200) NOT NULL,
+                GHICHU NVARCHAR(500),
+                NGAYDAT DATETIME2 NOT NULL DEFAULT SYSDATETIME(),
+                TRANGTHAI VARCHAR(20) NOT NULL DEFAULT 'Moi',
+                TONGTAMTINH DECIMAL(18,2) NOT NULL,
+                MAVOUCHER VARCHAR(20),
+                TIENGIAM DECIMAL(18,2) NOT NULL DEFAULT 0,
+                GIAMSANPHAM DECIMAL(18,2) NOT NULL DEFAULT 0,
+                MACTKM_HD VARCHAR(10),
+                MUCTIENHD DECIMAL(18,2),
+                DATRUTON BIT NOT NULL DEFAULT 0,
+                MAHD VARCHAR(10) REFERENCES HOADON(MAHD),
+                PHUONGTHUCTT VARCHAR(12) NOT NULL DEFAULT 'TaiCuaHang');
+            CREATE TABLE CTDONDATTHUOC (
+                MADON INT NOT NULL REFERENCES DONDATTHUOC(MADON),
+                MATHUOC VARCHAR(10) NOT NULL REFERENCES THUOC(MATHUOC),
+                SOLUONG INT NOT NULL,
+                DONGIADUKIEN DECIMAL(18,2) NOT NULL,
+                THANHTIEN DECIMAL(18,2) NOT NULL,
+                PRIMARY KEY (MADON, MATHUOC));
             INSERT INTO LOAITHUOC VALUES ('LT0001', N'Loai test');
             INSERT INTO NHANVIEN VALUES ('NV0001', N'Nhan vien test', NULL, NULL);
             INSERT INTO NHACUNGCAP VALUES ('NCC0001', N'NCC test', NULL, NULL);
@@ -201,6 +243,7 @@ internal static partial class Program
             INSERT INTO KM_HOADON VALUES ('KM0004', 100, 5);
             INSERT INTO KM_VOUCHER VALUES ('VC0001', 'KM0001', 'KH0001', 15);
             INSERT INTO KM_VOUCHER VALUES ('VC0002', 'KM0003', 'KH0001', 10);
+            INSERT INTO KM_VOUCHER VALUES ('WEB15', 'KM0001', NULL, 15);
             UPDATE THUOC SET SOLUONG = 20 WHERE MATHUOC = 'TH0002';
             """);
     }
@@ -360,7 +403,8 @@ internal static partial class Program
             Application.DoEvents();
             Check(nutChon.Enabled, "Nhap hang chon duoc thuoc ton 0");
             nutChon.PerformClick(); Application.DoEvents();
-            Check(form.ThuocDuocChon?.MaThuoc == "TH0004" && form.SoLuongDuocChon == 1, "Picker tra thuoc va so luong nhap");
+            Check(frmChonThuoc.ThuocDuocChon?.MaThuoc == "TH0004" && frmChonThuoc.SoLuongDuocChon == 1,
+                "Picker tra thuoc va so luong nhap");
             form.Close();
         }
     }

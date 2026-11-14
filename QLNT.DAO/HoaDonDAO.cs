@@ -10,10 +10,14 @@ public class HoaDonDAO
         const string sql =
             "SELECT hd.MAHD, hd.MANV, nv.HOTENNV, hd.NGAYLAP, hd.TONGTIEN, " +
             "hd.MAKH, kh.HOTEN AS TENKHACHHANG, hd.MAVOUCHER, hd.MACTKM_HD, " +
-            "hd.MUCTIENHD, hd.TIENGIAM " +
+            "hd.MUCTIENHD, hd.TIENGIAM, hd.TIENKHACHDUA, hd.PHUONGTHUCTT, hd.TRANGTHAITT, " +
+            "kmVoucher.TENCTKM AS TENKM_VOUCHER, kmHoaDon.TENCTKM AS TENKM_HOADON " +
             "FROM HOADON hd " +
             "LEFT JOIN NHANVIEN nv ON nv.MANV = hd.MANV " +
             "LEFT JOIN KHACHHANG kh ON kh.MAKH = hd.MAKH " +
+            "LEFT JOIN KM_VOUCHER voucher ON voucher.MAVOUCHER = hd.MAVOUCHER " +
+            "LEFT JOIN CTKHUYENMAI kmVoucher ON kmVoucher.MACTKM = voucher.MACTKM " +
+            "LEFT JOIN CTKHUYENMAI kmHoaDon ON kmHoaDon.MACTKM = hd.MACTKM_HD " +
             "ORDER BY hd.NGAYLAP DESC, hd.MAHD DESC";
 
         return conn.LayBang(sql);
@@ -41,8 +45,8 @@ public class HoaDonDAO
         {
             hoaDon.MaHD = TaoMaHoaDonTrongGiaoDich(ketNoi, giaoDich);
             using (var lenh = new SqlCommand(
-                "INSERT INTO HOADON (MAHD, MANV, NGAYLAP, TONGTIEN, MAKH, MAVOUCHER, MACTKM_HD, MUCTIENHD, TIENGIAM) " +
-                "VALUES (@maHD, @maNV, @ngayLap, @tongTien, @maKH, @maVoucher, @maCTKM, @mucTien, @tienGiam)",
+                "INSERT INTO HOADON (MAHD, MANV, NGAYLAP, TONGTIEN, MAKH, MAVOUCHER, MACTKM_HD, MUCTIENHD, TIENGIAM, TIENKHACHDUA) " +
+                "VALUES (@maHD, @maNV, @ngayLap, @tongTien, @maKH, @maVoucher, @maCTKM, @mucTien, @tienGiam, @tienKhachDua)",
                 ketNoi, giaoDich))
             {
                 ThemThamSoHoaDon(lenh, hoaDon);
@@ -73,7 +77,7 @@ public class HoaDonDAO
             using (var lenh = new SqlCommand(
                 "UPDATE HOADON SET MANV = @maNV, NGAYLAP = @ngayLap, TONGTIEN = @tongTien, " +
                 "MAKH = @maKH, MAVOUCHER = @maVoucher, MACTKM_HD = @maCTKM, " +
-                "MUCTIENHD = @mucTien, TIENGIAM = @tienGiam WHERE MAHD = @maHD",
+                "MUCTIENHD = @mucTien, TIENGIAM = @tienGiam, TIENKHACHDUA = @tienKhachDua WHERE MAHD = @maHD",
                 ketNoi, giaoDich))
             {
                 ThemThamSoHoaDon(lenh, hoaDon);
@@ -95,6 +99,14 @@ public class HoaDonDAO
                 throw new InvalidOperationException("Không tìm thấy chi tiết hóa đơn cần hủy.");
 
             CongTon(ketNoi, giaoDich, chiTiet);
+            using (var lienKet = new SqlCommand(
+                "IF OBJECT_ID(N'dbo.DONDATTHUOC', N'U') IS NOT NULL " +
+                "UPDATE dbo.DONDATTHUOC SET TRANGTHAI = 'DaHuy', MAHD = NULL " +
+                "WHERE MAHD = @maHD AND TRANGTHAI = 'DaXacNhan'", ketNoi, giaoDich))
+            {
+                lienKet.Parameters.Add(new SqlParameter("@maHD", SqlDbType.VarChar, 10) { Value = maHD });
+                lienKet.ExecuteNonQuery();
+            }
             using (var lenh = new SqlCommand("DELETE FROM CTHD WHERE MAHD = @maHD", ketNoi, giaoDich))
             {
                 lenh.Parameters.Add(new SqlParameter("@maHD", SqlDbType.VarChar, 10) { Value = maHD });
@@ -163,7 +175,7 @@ public class HoaDonDAO
         }
     }
 
-    private static string TaoMaHoaDonTrongGiaoDich(SqlConnection ketNoi, SqlTransaction giaoDich)
+    internal static string TaoMaHoaDonTrongGiaoDich(SqlConnection ketNoi, SqlTransaction giaoDich)
     {
         using var lenh = new SqlCommand("SELECT MAHD FROM HOADON WITH (UPDLOCK, HOLDLOCK)", ketNoi, giaoDich);
         using SqlDataReader reader = lenh.ExecuteReader();
@@ -235,6 +247,12 @@ public class HoaDonDAO
             Value = (object?)hoaDon.MucTienHD ?? DBNull.Value
         });
         lenh.Parameters.Add(TaoTien("@tienGiam", hoaDon.TienGiam));
+        lenh.Parameters.Add(new SqlParameter("@tienKhachDua", SqlDbType.Decimal)
+        {
+            Precision = 18,
+            Scale = 2,
+            Value = (object?)hoaDon.TienKhachDua ?? DBNull.Value
+        });
     }
 
     private static SqlParameter TaoTien(string ten, decimal giaTri) => new(ten, SqlDbType.Decimal)

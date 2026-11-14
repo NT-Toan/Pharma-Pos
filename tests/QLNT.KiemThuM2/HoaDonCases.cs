@@ -21,7 +21,7 @@ internal static partial class Program
             new(thuocBUS.LayTheoMa("TH0002")!) { SoLuong = 2 }
         };
 
-        KetQuaLuuHoaDon tao = bus.TaoHoaDon(nhanVien, khachHang, DateTime.Today, "VC0001", chiTiet);
+        KetQuaLuuHoaDon tao = bus.TaoHoaDon(nhanVien, khachHang, DateTime.Today, "VC0001", chiTiet, 500m);
         Check(tao.ThanhCong && tao.MaHD == "HD0001", "Tao hoa don co ma va luu thanh cong");
         if (!tao.ThanhCong)
             throw new InvalidOperationException(tao.ThongBao);
@@ -35,6 +35,8 @@ internal static partial class Program
         Check(header.Rows.Count == 1 && header.Rows[0]["MAVOUCHER"].ToString() == "VC0001" &&
             header.Rows[0].IsNull("MACTKM_HD") && tienGiamHoaDon == 87 && tongThanhToan == 493,
             "Luu voucher cao hon moc va dung tong giam hoa don");
+        Check(Convert.ToDecimal(header.Rows[0]["TIENKHACHDUA"]) == 500m,
+            "Luu so tien khach da dua cung hoa don");
         Check(dongDaLuu.Count == 2 && dongDaLuu.Single(dong => dong.MaThuoc == "TH0001").ThanhTien == 180 &&
             dongDaLuu.Single(dong => dong.MaThuoc == "TH0002").ThanhTien == 400 &&
             tongTruocGiamSanPham - tongDong == 20 && tongDong - tienGiamHoaDon == tongThanhToan,
@@ -79,6 +81,61 @@ internal static partial class Program
         }
 
         HoaDon hoaDonIn = bus.LayTatCa().Cast<HoaDon>().Single(hoaDon => hoaDon.MaHD == tao.MaHD);
+        using (var formDanhSach = new frmHoaDon { Opacity = 0, ShowInTaskbar = false })
+        {
+            formDanhSach.Show();
+            Application.DoEvents();
+            string TongKet(string ten) => ((Label)formDanhSach.Controls.Find(ten, true).Single()).Text;
+            var bangTongKet = (TableLayoutPanel)formDanhSach.Controls.Find("lblTienHang", true).Single().Parent!;
+            Check(bangTongKet.RowStyles.Cast<RowStyle>().All(hang =>
+                    hang.SizeType == SizeType.Absolute && hang.Height == 30),
+                "Cac dong tong ket hoa don cao deu nhau");
+            Check(TongKet("lblTienHang").Contains("580") &&
+                  TongKet("lblGiamHoaDon").Contains("87") &&
+                  TongKet("lblLoaiKhuyenMai").Contains("VC0001") &&
+                  TongKet("lblLoaiKhuyenMai").Contains("Khuyen mai test") &&
+                  TongKet("lblLoaiKhuyenMai").Contains("15% tiền hàng") &&
+                  TongKet("lblTongSauGiam").Contains("493") &&
+                  TongKet("lblTienKhachDua").Contains("500") &&
+                  TongKet("lblTienThoi").Contains("7"),
+                "Chi tiet hoa don hien tien sau giam, voucher, tien khach dua va tien thoi");
+            var maLoc = (TextBox)formDanhSach.Controls.Find("txtLocMaHoaDon", true).Single();
+            var tim = (Button)formDanhSach.Controls.Find("btnTimHoaDon", true).Single();
+            var xoaLoc = (Button)formDanhSach.Controls.Find("btnXoaBoLocHoaDon", true).Single();
+            var danhSach = (ListView)formDanhSach.Controls.Find("lvHoaDon", true).Single();
+            maLoc.Text = "KHONG_CO";
+            tim.PerformClick();
+            Check(danhSach.Items.Count == 0, "Form hoa don loc ma khong ton tai thanh danh sach rong");
+            xoaLoc.PerformClick();
+            Check(danhSach.Items.Count == 1, "Form hoa don xoa bo loc hien lai du lieu cache");
+            var truongThem = (ComboBox)formDanhSach.Controls.Find("cboLocTruongThemHoaDon", true).Single();
+            var toanTuThem = (ComboBox)formDanhSach.Controls.Find("cboLocToanTuThemHoaDon", true).Single();
+            var giaTriThem = (TextBox)formDanhSach.Controls.Find("txtLocGiaTriThemHoaDon", true).Single();
+            truongThem.SelectedIndex = 7;
+            toanTuThem.SelectedItem = ">";
+            giaTriThem.Text = "500";
+            tim.PerformClick();
+            Check(danhSach.Items.Count == 0, "Form hoa don loc tong tien lon hon 500");
+            giaTriThem.Text = "400";
+            tim.PerformClick();
+            Check(danhSach.Items.Count == 1, "Form hoa don loc tong tien lon hon 400");
+            formDanhSach.Close();
+        }
+        Check(bus.MoTaKhuyenMaiDaApDung(new HoaDon
+        {
+            MaCTKMHD = "KM0003",
+            TenKhuyenMaiHoaDon = "Mua nhiều giảm nhiều",
+            MucTienHD = 500000m,
+            TienGiam = 31500m
+        }, 630000m).Contains("Mua nhiều giảm nhiều (KM0003): giảm 5% tiền hàng") &&
+              bus.MoTaKhuyenMaiDaApDung(new HoaDon
+              {
+                  MaCTKMHD = "KM0003",
+                  TenKhuyenMaiHoaDon = "Mua nhiều giảm nhiều",
+                  MucTienHD = 500000m,
+                  TienGiam = 31500m
+              }, 630000m).Contains("mốc 500.000"),
+            "Mo ta khuyen mai theo moc ghi ten, phan tram va muc ap dung");
         string duongDanPdf = Path.Combine(thuMucExcel, "hoa-don-test.pdf");
         HoaDonIn.XuatPdf(duongDanPdf, hoaDonIn, dongDaLuu);
         using (var tepPdf = File.OpenRead(duongDanPdf))
@@ -104,6 +161,7 @@ internal static partial class Program
         decimal tongSauSua = bus.LayChiTiet(tao.MaHD).Cast<CTHoaDon>().Sum(dong => dong.ThanhTien);
         Check(tongSauSua == 470 && Convert.ToDecimal(header.Rows[0]["TONGTIEN"]) == 470 &&
             Convert.ToDecimal(header.Rows[0]["TIENGIAM"]) == 0 &&
+            Convert.ToDecimal(header.Rows[0]["TIENKHACHDUA"]) == 500m &&
             header.Rows[0].IsNull("MAVOUCHER") && header.Rows[0].IsNull("MACTKM_HD") &&
             header.Rows[0].IsNull("MUCTIENHD"),
             "Sua hoa don tinh lai CTHD va xoa thong tin giam cu");
@@ -257,7 +315,7 @@ internal static partial class Program
     }
 
     private static DataTable LayHeaderHoaDon(string maHD) => new MyConnection().LayBang(
-        "SELECT MAHD, MAVOUCHER, MACTKM_HD, MUCTIENHD, TIENGIAM, TONGTIEN FROM HOADON WHERE MAHD = @maHD",
+        "SELECT MAHD, MAVOUCHER, MACTKM_HD, MUCTIENHD, TIENGIAM, TONGTIEN, TIENKHACHDUA FROM HOADON WHERE MAHD = @maHD",
         new SqlParameter("@maHD", SqlDbType.VarChar, 10) { Value = maHD });
 
     private static IEnumerable<Control> CacDieuKhien(Control cha)

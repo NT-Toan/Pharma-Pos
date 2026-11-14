@@ -1,0 +1,320 @@
+@page
+@model QLNT.Web.Pages.IndexModel
+@{
+    ViewData["Title"] = "Đặt thuốc";
+}
+
+<div class="page-shell">
+    <div class="intro">
+        <div>
+            <p class="intro-label">Nhà thuốc QLNT</p>
+            <h1>Đặt thuốc dễ dàng – Xác nhận minh bạch.</h1>
+            <p class="intro-copy">Chọn đúng thuốc, kiểm tra kỹ giỏ hàng và hoàn tất đơn chỉ trong vài bước. Hệ thống tự động cập nhật tồn kho ngay khi đơn hàng được xác nhận, đảm bảo thuốc luôn sẵn sàng cho bạn.</p>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(Model.ThanhCong))
+    {
+        <div class="notice notice-success" role="status">@Model.ThanhCong</div>
+    }
+    @if (!string.IsNullOrEmpty(Model.Loi))
+    {
+        <div class="notice notice-error" role="alert">@Model.Loi</div>
+    }
+
+    <form method="post" asp-page="/Index" id="order-form"
+          data-postback="@Model.LaPost.ToString().ToLowerInvariant()"
+          data-complete="@((!string.IsNullOrEmpty(Model.ThanhCong)).ToString().ToLowerInvariant())">
+        <div class="order-layout">
+            <section class="catalog" aria-labelledby="catalog-title">
+                <div class="section-heading">
+                    <div><h2 id="catalog-title">Danh sách thuốc</h2><p>Chọn số lượng ngay trên từng thuốc.</p></div>
+                    <span class="count-pill">@Model.Thuoc.Count thuốc còn hàng</span>
+                </div>
+                <label class="search-box">
+                    <span class="search-icon" aria-hidden="true">⌕</span>
+                    <input type="search" id="search" placeholder="Tìm theo tên hoặc mã thuốc" autocomplete="off" aria-label="Tìm thuốc" />
+                </label>
+                @if (Model.Thuoc.Count == 0)
+                {
+                    <p class="empty-state">Chưa có thuốc để đặt. Hãy kiểm tra kết nối dữ liệu hoặc thêm thuốc còn hàng.</p>
+                }
+                else
+                {
+                    <div class="product-list" id="product-list">
+                        @foreach (var thuoc in Model.Thuoc)
+                        {
+                            var phanTramGiam = Model.GiamTheoThuoc.GetValueOrDefault(thuoc.MaThuoc);
+                            <article class="product" data-search="@($"{thuoc.MaThuoc} {thuoc.TenThuoc}".ToLowerInvariant())">
+                                <div class="product-icon" aria-hidden="true">✚</div>
+                                <div class="product-info">
+                                    <div class="product-title"><h3>@thuoc.TenThuoc</h3><span class="product-code">@thuoc.MaThuoc</span></div>
+                                    <p>Đang có @thuoc.SoLuong sản phẩm
+                                        @if (phanTramGiam > 0)
+                                        {
+                                            <span class="promotion-badge">Giảm @phanTramGiam.ToString("0.##")% theo sản phẩm</span>
+                                        }
+                                    </p>
+                                </div>
+                                <div class="product-action">
+                                    <strong>@thuoc.DonGia.ToString("N0") <small>đ</small></strong>
+                                    <label>
+                                        <span>Số lượng</span>
+                                        <input class="quantity" type="number" name="soluong-@thuoc.MaThuoc"
+                                               value="@Model.SoLuongDaNhap(thuoc.MaThuoc)"
+                                               min="0" max="@Math.Min(thuoc.SoLuong, 999)" inputmode="numeric"
+                                               data-price="@thuoc.DonGia.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                                               data-name="@thuoc.TenThuoc" aria-label="Số lượng @thuoc.TenThuoc" />
+                                    </label>
+                                    <button type="button" class="add-to-cart">Thêm vào giỏ</button>
+                                </div>
+                            </article>
+                        }
+                    </div>
+                    <p class="empty-state" id="search-empty" hidden>Không tìm thấy thuốc phù hợp.</p>
+                }
+            </section>
+
+            <aside class="checkout" aria-labelledby="checkout-title">
+                <div class="checkout-heading"><h2 id="checkout-title">Giỏ hàng</h2><p>Thuốc đã chọn được giữ khi bạn tìm kiếm.</p></div>
+                <div class="checkout-content">
+                    <div class="summary" aria-live="polite">
+                        <div><span>Đã chọn</span><strong id="selected-count">0 thuốc</strong></div>
+                        <ul class="cart-items" id="cart-items"><li>Giỏ hàng đang trống.</li></ul>
+                        <div><span>Tiền hàng trước giảm</span><strong id="cart-subtotal">0 đ</strong></div>
+                        <div><span>Giảm giá sản phẩm</span><strong id="cart-product-discount">0 đ</strong></div>
+                        <div><span>Giảm giá hóa đơn</span><strong id="cart-discount">0 đ</strong></div>
+                        <p id="promotion-name">Chưa có khuyến mãi hóa đơn.</p>
+                        <div class="summary-total"><span>Tổng sau giảm</span><strong id="estimated-total">0 đ</strong></div>
+                        <p>Tổng tiền sẽ được tính lại khi bạn xác nhận đơn.</p>
+                    </div>
+                    <div class="field"><label asp-for="MaVoucher">Mã voucher (nếu có)</label>
+                        <div class="voucher-field"><input asp-for="MaVoucher" maxlength="20" placeholder="Nhập mã giảm giá" /><button type="button" id="apply-voucher">Áp dụng</button></div>
+                        <p class="voucher-message" id="voucher-message" role="status"></p>
+                    </div>
+                    <h3 class="contact-heading">Thông tin nhận hàng</h3>
+                    <div class="field"><label asp-for="HoTen">Họ và tên <span>*</span></label><input asp-for="HoTen" maxlength="100" autocomplete="name" required placeholder="Tên người nhận thuốc" /></div>
+                    <div class="field"><label asp-for="SDT">Số điện thoại <span>*</span></label><input asp-for="SDT" type="tel" inputmode="tel" pattern="[0-9]{9,15}" maxlength="15" autocomplete="tel" required placeholder="Ví dụ: 0901234567" /></div>
+                    <div class="field"><label asp-for="DiaChi">Địa chỉ nhận hàng <span>*</span></label><input asp-for="DiaChi" maxlength="200" autocomplete="street-address" required placeholder="Số nhà, đường, quận/huyện..." /></div>
+                    <div class="field"><label asp-for="GhiChu">Ghi chú</label><textarea asp-for="GhiChu" maxlength="500" rows="3" placeholder="Thời gian liên hệ hoặc lưu ý khác"></textarea></div>
+                    <fieldset class="payment-methods">
+                        <legend>Phương thức thanh toán</legend>
+                        <label><input type="radio" name="PhuongThucThanhToan" value="Online" checked="@(Model.PhuongThucThanhToan == "Online")" /> Chuyển khoản online (chờ nhà thuốc đối chiếu)</label>
+                        <label><input type="radio" name="PhuongThucThanhToan" value="TaiCuaHang" checked="@(Model.PhuongThucThanhToan == "TaiCuaHang")" /> Thanh toán tại cửa hàng</label>
+                        <label><input type="radio" name="PhuongThucThanhToan" value="COD" checked="@(Model.PhuongThucThanhToan == "COD")" /> COD – Thanh toán khi giao hàng</label>
+                    </fieldset>
+                    <button type="button" class="button button-primary" id="review-order" disabled>Xem lại đơn hàng</button>
+                    <p class="privacy-note">Chỉ gửi đơn khi bạn đồng ý để nhà thuốc liên hệ xác nhận.</p>
+                </div>
+            </aside>
+        </div>
+        <dialog class="review-dialog" id="review-dialog" aria-labelledby="review-title">
+            <div class="review-content">
+                <h2 id="review-title">Xác nhận đơn hàng</h2>
+                <p>Kiểm tra lại thuốc, thông tin nhận hàng và số tiền tạm tính trước khi gửi.</p>
+                <ul id="review-items" class="review-items"></ul>
+                <div class="review-line"><span>Người nhận</span><strong id="review-customer"></strong></div>
+                <div class="review-line"><span>Số điện thoại</span><strong id="review-phone"></strong></div>
+                <div class="review-line"><span>Địa chỉ</span><strong id="review-address"></strong></div>
+                <div class="review-line"><span>Voucher</span><strong id="review-voucher"></strong></div>
+                <div class="review-line"><span>Thanh toán</span><strong id="review-payment"></strong></div>
+                <div class="review-line"><span>Giảm sản phẩm</span><strong id="review-product-discount"></strong></div>
+                <div class="review-line"><span>Khuyến mãi hóa đơn</span><strong id="review-promotion"></strong></div>
+                <div class="review-line review-total"><span>Tổng sau giảm</span><strong id="review-total"></strong></div>
+                <p class="review-note">Xác nhận gửi đơn sẽ giữ thuốc trong kho. Web chưa thu tiền tự động; nếu bạn chọn online, nhân viên sẽ đối chiếu khoản chuyển trước khi xác nhận đã thanh toán.</p>
+                <div class="review-actions"><button type="button" class="button button-outline" id="back-to-order">Quay lại chỉnh sửa</button><button type="submit" class="button button-primary" id="confirm-order">Xác nhận gửi đơn</button></div>
+            </div>
+        </dialog>
+    </form>
+</div>
+
+@section Scripts {
+<script>
+(() => {
+    const search = document.getElementById('search');
+    const products = [...document.querySelectorAll('.product')];
+    const inputs = [...document.querySelectorAll('.quantity')];
+    const count = document.getElementById('selected-count');
+    const total = document.getElementById('estimated-total');
+    const subtotal = document.getElementById('cart-subtotal');
+    const productDiscount = document.getElementById('cart-product-discount');
+    const discount = document.getElementById('cart-discount');
+    const promotionName = document.getElementById('promotion-name');
+    const cart = document.getElementById('cart-items');
+    const reviewButton = document.getElementById('review-order');
+    const dialog = document.getElementById('review-dialog');
+    const confirmButton = document.getElementById('confirm-order');
+    const empty = document.getElementById('search-empty');
+    const form = document.getElementById('order-form');
+    const voucher = document.getElementById('MaVoucher');
+    const voucherMessage = document.getElementById('voucher-message');
+    const money = new Intl.NumberFormat('vi-VN');
+    const percent = new Intl.NumberFormat('vi-VN', {maximumFractionDigits: 2});
+    const cartKey = 'qlnt-cart-v1';
+    let quote = null;
+    let quoteVersion = 0;
+    let appliedVoucher = '';
+    let confirmed = false;
+    if (form.dataset.complete === 'true') localStorage.removeItem(cartKey);
+    else if (form.dataset.postback !== 'true') {
+        try {
+            const saved = JSON.parse(localStorage.getItem(cartKey) || '{}');
+            for (const input of inputs) {
+                const value = Number.parseInt(saved[input.name], 10) || 0;
+                input.value = Math.max(0, Math.min(value, Number(input.max)));
+            }
+        } catch { localStorage.removeItem(cartKey); }
+    }
+    async function update() {
+        let selected = 0, sum = 0;
+        const saved = {};
+        cart.replaceChildren();
+        for (const input of inputs) {
+            const quantity = Math.max(0, Number.parseInt(input.value, 10) || 0);
+            if (quantity > 0) {
+                selected++;
+                saved[input.name] = quantity;
+                sum += quantity * Number(input.dataset.price);
+                const item = document.createElement('li');
+                item.dataset.ma = input.name.slice('soluong-'.length);
+                const label = document.createElement('span');
+                label.textContent = input.dataset.name + ' × ' + quantity;
+                const remove = document.createElement('button');
+                remove.type = 'button'; remove.textContent = 'Bỏ';
+                remove.setAttribute('aria-label', 'Bỏ ' + input.dataset.name + ' khỏi giỏ');
+                remove.addEventListener('click', () => { input.value = 0; update(); });
+                item.append(label, remove);
+                cart.append(item);
+            }
+            input.closest('.product').classList.toggle('is-selected', quantity > 0);
+            const addButton = input.closest('.product').querySelector('.add-to-cart');
+            addButton.disabled = quantity > 0;
+            addButton.textContent = quantity > 0 ? 'Đã trong giỏ' : 'Thêm vào giỏ';
+        }
+        if (selected === 0) {
+            const item = document.createElement('li'); item.textContent = 'Giỏ hàng đang trống.'; cart.append(item);
+        }
+        localStorage.setItem(cartKey, JSON.stringify(saved));
+        count.textContent = selected + ' thuốc';
+        subtotal.textContent = money.format(sum) + ' đ';
+        productDiscount.textContent = '0 đ';
+        discount.textContent = '0 đ';
+        total.textContent = selected ? 'Đang tính…' : '0 đ';
+        promotionName.textContent = '';
+        reviewButton.disabled = true;
+        quote = null;
+        const version = ++quoteVersion;
+        if (!selected) return;
+        const gio = inputs.filter(i => Number(i.value) > 0).map(i =>
+            i.name.slice('soluong-'.length) + ':' + Number.parseInt(i.value, 10)).join(',');
+        try {
+            const response = await fetch('?handler=Gia&gio=' + encodeURIComponent(gio) +
+                '&maVoucher=' + encodeURIComponent(appliedVoucher));
+            const result = await response.json();
+            if (version !== quoteVersion) return;
+            if (!result.hopLe) {
+                total.textContent = 'Chưa tính được';
+                promotionName.textContent = result.thongBao;
+                return;
+            }
+            quote = result;
+            for (const dong of result.cacDong) {
+                const item = [...cart.children].find(li => li.dataset.ma === dong.ma);
+                const input = inputs.find(i => i.name === 'soluong-' + dong.ma);
+                if (item && input) {
+                    const rate = Number(dong.phanTramGiam);
+                    item.firstElementChild.textContent = input.dataset.name + ' × ' + input.value +
+                        (rate > 0 ? ' · giảm ' + percent.format(rate) + '%' : '') +
+                        ' · ' + money.format(dong.thanhTien) + ' đ';
+                }
+            }
+            subtotal.textContent = money.format(result.tongGoc) + ' đ';
+            productDiscount.textContent = money.format(result.giamSanPham) + ' đ';
+            discount.textContent = money.format(result.giamHoaDon) + ' đ';
+            total.textContent = money.format(result.tongThanhToan) + ' đ';
+            const mucGiam = 'giảm ' + percent.format(result.phanTramGiamHoaDon) + '%';
+            promotionName.textContent = result.maVoucher ? 'Voucher ' + result.maVoucher + ' · ' + mucGiam :
+                result.maCTKMHD ? 'Khuyến mãi hóa đơn ' + result.maCTKMHD + ' · ' + mucGiam +
+                ' (mốc ' + money.format(result.mucTienHD) + ' đ)' : 'Không có khuyến mãi hóa đơn';
+            if (appliedVoucher && !result.maVoucher)
+                voucherMessage.textContent = 'Mã hợp lệ; mốc giảm hóa đơn có lợi hơn nên được áp dụng.';
+            reviewButton.disabled = false;
+        } catch {
+            if (version === quoteVersion) total.textContent = 'Chưa tính được';
+        }
+    }
+    inputs.forEach(input => input.addEventListener('input', update));
+    document.querySelectorAll('.add-to-cart').forEach(button => button.addEventListener('click', () => {
+        const input = button.closest('.product').querySelector('.quantity');
+        input.value = '1'; update();
+    }));
+    search?.addEventListener('input', () => {
+        const value = search.value.trim().toLocaleLowerCase('vi-VN');
+        let visible = 0;
+        products.forEach(product => {
+            const show = product.dataset.search.includes(value);
+            product.hidden = !show;
+            if (show) visible++;
+        });
+        if (empty) empty.hidden = visible !== 0;
+    });
+    voucher?.addEventListener('input', () => {
+        appliedVoucher = ''; voucherMessage.textContent = ''; update();
+    });
+    document.getElementById('apply-voucher')?.addEventListener('click', async () => {
+        const code = voucher.value.trim();
+        if (!code) { voucherMessage.textContent = 'Nhập mã voucher để kiểm tra.'; update(); return; }
+        try {
+            const response = await fetch('?handler=Voucher&ma=' + encodeURIComponent(code));
+            const result = await response.json();
+            appliedVoucher = result.hopLe ? code : '';
+            voucherMessage.textContent = result.thongBao;
+        } catch { voucherMessage.textContent = 'Chưa kiểm tra được voucher lúc này.'; }
+        update();
+    });
+    function showReview() {
+        if (!form.reportValidity()) return;
+        if (!quote) return;
+        if (voucher.value.trim() && appliedVoucher !== voucher.value.trim()) {
+            voucherMessage.textContent = 'Bấm Áp dụng để kiểm tra voucher hoặc xóa mã này.';
+            voucher.focus(); return;
+        }
+        const list = document.getElementById('review-items');
+        list.replaceChildren();
+        for (const input of inputs) {
+            const quantity = Number.parseInt(input.value, 10) || 0;
+            if (quantity <= 0) continue;
+            const item = document.createElement('li');
+            const thanhTien = quote.cacDong.find(d => d.ma === input.name.slice('soluong-'.length))?.thanhTien;
+            const giam = quote.cacDong.find(d => d.ma === input.name.slice('soluong-'.length))?.phanTramGiam || 0;
+            item.textContent = input.dataset.name + ' × ' + quantity +
+                (giam > 0 ? ' · giảm ' + percent.format(giam) + '%' : '') +
+                ' — ' + money.format(thanhTien ?? quantity * Number(input.dataset.price)) + ' đ';
+            list.append(item);
+        }
+        if (!list.children.length) return;
+        document.getElementById('review-customer').textContent = document.getElementById('HoTen').value.trim();
+        document.getElementById('review-phone').textContent = document.getElementById('SDT').value.trim();
+        document.getElementById('review-address').textContent = document.getElementById('DiaChi').value.trim();
+        document.getElementById('review-voucher').textContent = quote.maVoucher || 'Không áp dụng';
+        document.getElementById('review-product-discount').textContent = productDiscount.textContent;
+        document.getElementById('review-promotion').textContent = promotionName.textContent + ' · giảm ' + discount.textContent;
+        const payment = document.querySelector('input[name="PhuongThucThanhToan"]:checked');
+        document.getElementById('review-payment').textContent = ({
+            Online: 'Chuyển khoản online (chờ đối chiếu)',
+            TaiCuaHang: 'Thanh toán tại cửa hàng',
+            COD: 'COD – Thanh toán khi giao hàng'
+        })[payment?.value] || '';
+        document.getElementById('review-total').textContent = total.textContent;
+        dialog.showModal();
+    }
+    reviewButton.addEventListener('click', showReview);
+    document.getElementById('back-to-order').addEventListener('click', () => dialog.close());
+    confirmButton.addEventListener('click', () => { confirmed = true; });
+    form.addEventListener('submit', event => {
+        if (!confirmed) { event.preventDefault(); showReview(); }
+    });
+    update();
+})();
+</script>
+}

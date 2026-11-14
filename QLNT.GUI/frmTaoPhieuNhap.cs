@@ -220,7 +220,7 @@ public sealed class frmTaoPhieuNhap : Form
     private void ChonNhaCungCap()
     {
         using var form = new frmChonNhaCungCap();
-        if (form.ShowDialog(this) == DialogResult.OK && form.NhaCungCapDuocChon is NhaCungCap ncc)
+        if (form.ShowDialog(this) == DialogResult.OK && frmChonNhaCungCap.NhaCungCapDuocChon is NhaCungCap ncc)
         {
             nhaCungCap = ncc;
             txtNCC.Text = $"{ncc.MaNCC} - {ncc.TenNCC}";
@@ -233,11 +233,11 @@ public sealed class frmTaoPhieuNhap : Form
         using var form = new frmChonThuoc(t => (int)Math.Min(int.MaxValue,
             (long)int.MaxValue - t.SoLuong + (banGoc?.ChiTiet.Cast<CTPhieuNhap>()
                 .FirstOrDefault(d => d.MaThuoc.Equals(t.MaThuoc, StringComparison.OrdinalIgnoreCase))?.SoLuong ?? 0)));
-        if (form.ShowDialog(this) == DialogResult.OK && form.ThuocDuocChon is Thuoc thuoc)
+        if (form.ShowDialog(this) == DialogResult.OK && frmChonThuoc.ThuocDuocChon is Thuoc thuoc)
         {
             thuocDangChon = thuoc;
             txtThuoc.Text = $"{thuoc.MaThuoc} - {thuoc.TenThuoc}";
-            nudSoLuong.Value = form.SoLuongDuocChon;
+            nudSoLuong.Value = frmChonThuoc.SoLuongDuocChon;
             nudDonGia.Value = 0;
             CapNhatNutChiTiet();
         }

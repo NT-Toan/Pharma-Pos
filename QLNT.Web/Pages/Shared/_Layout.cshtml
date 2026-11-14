@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@ViewData["Title"] · Nhà thuốc QLNT</title>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+    <header class="site-header">
+        <div class="header-inner">
+            <a class="brand" asp-page="/Index" aria-label="Nhà thuốc QLNT, về trang đặt thuốc">
+                <span class="brand-mark" aria-hidden="true"><img src="~/images/logo-nha-thuoc.svg" asp-append-version="true" alt="" /></span>
+                <span><strong>Nhà thuốc QLNT</strong><small>Đặt thuốc dễ dàng · Xác nhận minh bạch</small></span>
+            </a>
+            <nav aria-label="Điều hướng chính">
+                <a asp-page="/Index">Đặt thuốc</a>
+            </nav>
+        </div>
+    </header>
+    <main>@RenderBody()</main>
+    <footer class="site-footer">
+        <div class="footer-inner">
+            <p class="footer-brand"><strong>QLNT</strong> · Thuốc được giữ trong kho khi bạn đặt đơn thành công.</p>
+            <p class="footer-links">
+                Tư vấn Dược sĩ: <strong>1800 xxxx</strong> (7:00 – 22:00)
+                <span aria-hidden="true">·</span> <a asp-page="/ChinhSachDoiTra">Chính sách đổi trả</a>
+                <span aria-hidden="true">·</span> <a asp-page="/BaoMatThongTin">Bảo mật thông tin</a>
+            </p>
+            <p class="footer-note">Lưu ý: Đọc kỹ hướng dẫn sử dụng trước khi dùng. © 2026 QLNT.</p>
+        </div>
+    </footer>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
