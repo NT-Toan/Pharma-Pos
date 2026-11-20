@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Data;
+using System.Globalization;
 
 public class HoaDonBUS
 {
@@ -55,16 +56,34 @@ public class HoaDonBUS
             : 0m;
         string mucGiam = $"giảm {phanTramThucTe:0.##}% tiền hàng";
 
-        if (!string.IsNullOrWhiteSpace(hoaDon.MaVoucher))
+        bool coVoucher = !string.IsNullOrWhiteSpace(hoaDon.MaVoucher);
+        bool coKMHoaDon = !string.IsNullOrWhiteSpace(hoaDon.MaCTKMHD);
+
+        if (coVoucher && coKMHoaDon)
+        {
+            string ten = string.IsNullOrWhiteSpace(hoaDon.TenKhuyenMaiVoucher)
+                ? "Voucher" : hoaDon.TenKhuyenMaiVoucher;
+            string tenMoc = string.IsNullOrWhiteSpace(hoaDon.TenKhuyenMaiHoaDon)
+                ? "Khuyến mãi hóa đơn" : hoaDon.TenKhuyenMaiHoaDon;
+            string mucTien = hoaDon.MucTienHD.HasValue
+                ? hoaDon.MucTienHD.Value.ToString("N0", CultureInfo.GetCultureInfo("vi-VN"))
+                : "0";
+            return $"{ten} - voucher {hoaDon.MaVoucher} + {tenMoc} ({hoaDon.MaCTKMHD}): {mucGiam}; mốc {mucTien} đ";
+        }
+
+        if (coVoucher)
         {
             string ten = string.IsNullOrWhiteSpace(hoaDon.TenKhuyenMaiVoucher)
                 ? "Voucher" : hoaDon.TenKhuyenMaiVoucher;
             return $"{ten} - voucher {hoaDon.MaVoucher}: {mucGiam}";
         }
 
-        string tenMoc = string.IsNullOrWhiteSpace(hoaDon.TenKhuyenMaiHoaDon)
+        string tenMocCuoi = string.IsNullOrWhiteSpace(hoaDon.TenKhuyenMaiHoaDon)
             ? "Khuyến mãi hóa đơn" : hoaDon.TenKhuyenMaiHoaDon;
-        return $"{tenMoc} ({hoaDon.MaCTKMHD}): {mucGiam}; mốc {hoaDon.MucTienHD:N0} đ";
+        string mucTienCuoi = hoaDon.MucTienHD.HasValue
+            ? hoaDon.MucTienHD.Value.ToString("N0", CultureInfo.GetCultureInfo("vi-VN"))
+            : "0";
+        return $"{tenMocCuoi} ({hoaDon.MaCTKMHD}): {mucGiam}; mốc {mucTienCuoi} đ";
     }
 
     public ArrayList TimKiem(string tuKhoa)
@@ -264,8 +283,12 @@ public class HoaDonBUS
             ? 0
             : Math.Round(tongSauGiamSanPham * mocApDung.PhanTramGiam / 100m, 2, MidpointRounding.AwayFromZero);
 
-        bool dungVoucher = maVoucherChuan != null && tienGiamVoucher >= tienGiamMoc;
-        decimal tienGiamHoaDon = dungVoucher ? tienGiamVoucher : tienGiamMoc;
+        decimal tienGiamHoaDon = Math.Min(
+            tongSauGiamSanPham,
+            tienGiamVoucher + tienGiamMoc);
+        decimal phanTramGiamHoaDon = tongSauGiamSanPham > 0
+            ? Math.Round(tienGiamHoaDon * 100m / tongSauGiamSanPham, 2, MidpointRounding.AwayFromZero)
+            : 0m;
         decimal tongTien = Math.Max(0, tongSauGiamSanPham - tienGiamHoaDon);
 
         return KetQuaTinhHoaDon.Ok(
@@ -273,11 +296,18 @@ public class HoaDonBUS
             tongGoc - tongSauGiamSanPham,
             tongSauGiamSanPham,
             tienGiamHoaDon,
-            dungVoucher ? phanTramVoucher : mocApDung?.PhanTramGiam ?? 0,
+            phanTramGiamHoaDon,
             tongTien,
-            dungVoucher ? maVoucherChuan : null,
-            !dungVoucher ? mocApDung?.MaCTKM : null,
-            !dungVoucher ? mocApDung?.MucTienHD : null);
+            maVoucherChuan,
+            mocApDung?.MaCTKM,
+            mocApDung?.MucTienHD,
+            maVoucherChuan,
+            mocApDung?.MaCTKM,
+            mocApDung?.MucTienHD,
+            tienGiamVoucher,
+            mocApDung == null ? 0 : tienGiamMoc,
+            phanTramVoucher,
+            mocApDung?.PhanTramGiam ?? 0);
     }
 
     public KetQuaLuuHoaDon TaoHoaDon(
@@ -461,6 +491,13 @@ public sealed class KetQuaTinhHoaDon
     public string? MaVoucher { get; private init; }
     public string? MaCTKMHD { get; private init; }
     public decimal? MucTienHD { get; private init; }
+    public string? MaVoucherDuKien { get; private init; }
+    public string? MaCTKMHDDuKien { get; private init; }
+    public decimal? MucTienHDDuKien { get; private init; }
+    public decimal TienGiamVoucherDuKien { get; private init; }
+    public decimal TienGiamHoaDonDuKien { get; private init; }
+    public decimal PhanTramVoucherDuKien { get; private init; }
+    public decimal PhanTramHoaDonDuKien { get; private init; }
 
     public static KetQuaTinhHoaDon Loi(string thongBao) => new() { ThongBao = thongBao };
 
@@ -473,7 +510,14 @@ public sealed class KetQuaTinhHoaDon
         decimal tongTien,
         string? maVoucher,
         string? maCTKMHD,
-        decimal? mucTienHD) => new()
+        decimal? mucTienHD,
+        string? maVoucherDuKien = null,
+        string? maCTKMHDDuKien = null,
+        decimal? mucTienHDDuKien = null,
+        decimal tienGiamVoucherDuKien = 0,
+        decimal tienGiamHoaDonDuKien = 0,
+        decimal phanTramVoucherDuKien = 0,
+        decimal phanTramHoaDonDuKien = 0) => new()
         {
             ThanhCong = true,
             TongGoc = tongGoc,
@@ -484,7 +528,14 @@ public sealed class KetQuaTinhHoaDon
             TongTien = tongTien,
             MaVoucher = maVoucher,
             MaCTKMHD = maCTKMHD,
-            MucTienHD = mucTienHD
+            MucTienHD = mucTienHD,
+            MaVoucherDuKien = maVoucherDuKien,
+            MaCTKMHDDuKien = maCTKMHDDuKien,
+            MucTienHDDuKien = mucTienHDDuKien,
+            TienGiamVoucherDuKien = tienGiamVoucherDuKien,
+            TienGiamHoaDonDuKien = tienGiamHoaDonDuKien,
+            PhanTramVoucherDuKien = phanTramVoucherDuKien,
+            PhanTramHoaDonDuKien = phanTramHoaDonDuKien
         };
 }
 

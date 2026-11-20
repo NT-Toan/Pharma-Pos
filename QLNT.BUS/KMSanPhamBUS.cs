@@ -65,6 +65,7 @@ public class KMSanPhamBUS
 
         dao.LuuKMSanPham(sp);
         TaiLai();
+        CTKhuyenMaiBUS.TaiLai();
         return KetQua.Ok("Lưu giảm giá sản phẩm thành công.");
     }
 
@@ -72,6 +73,7 @@ public class KMSanPhamBUS
     {
         dao.XoaKMSanPham(maKM, maThuoc);
         TaiLai();
+        CTKhuyenMaiBUS.TaiLai();
         return KetQua.Ok("Xóa giảm giá sản phẩm thành công.");
     }
 }

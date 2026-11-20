@@ -13,9 +13,10 @@ internal static partial class Program
         var dongBa = new List<DongDatThuoc> { new() { MaThuoc = "TH0999", SoLuong = 3 } };
         var (gia, loi) = bus.TinhGia(dongBa, "WEB15");
         Check(gia != null && gia.TongGoc == 600m && gia.GiamSanPham == 60m &&
-              gia.GiamHoaDon == 81m && gia.TongThanhToan == 459m &&
-              gia.MaVoucher == "WEB15" && gia.PhanTramGiamTheoThuoc["TH0999"] == 10m,
-            "Web tinh giam san pham truoc va chon voucher co loi hon moc hoa don: " + loi);
+              gia.GiamHoaDon == 108m && gia.TongThanhToan == 432m &&
+              gia.MaVoucher == "WEB15" && gia.MaCTKMHD == "KM0001" &&
+              gia.PhanTramGiamTheoThuoc["TH0999"] == 10m,
+            "Web tinh giam san pham truoc va cong dong voucher voi moc hoa don: " + loi);
         var (giaKhongVoucher, _) = bus.TinhGia(dongBa, null);
         Check(giaKhongVoucher?.MaCTKMHD == "KM0001" && giaKhongVoucher.MucTienHD == 500m &&
               giaKhongVoucher.GiamHoaDon == 27m,
@@ -41,11 +42,11 @@ internal static partial class Program
             "Don web luu thanh tien dong sau giam san pham");
         Check(!bus.XacNhan(maTaiQuay, "NV0001", 0).ThanhCong,
             "Tra tai quay khong tao hoa don neu tien khach dua thieu");
-        Check(bus.XacNhan(maTaiQuay, "NV0001", 459m).ThanhCong && Ton() == 7,
+        Check(bus.XacNhan(maTaiQuay, "NV0001", 432m).ThanhCong && Ton() == 7,
             "Xac nhan don web tao hoa don khong tru ton lan hai");
         string hdTaiQuay = MaHD(maTaiQuay);
         Check(Convert.ToDecimal(conn.LayGiaTri("SELECT TONGTIEN FROM HOADON WHERE MAHD=@ma",
-                  new SqlParameter("@ma", hdTaiQuay))) == 459m &&
+                  new SqlParameter("@ma", hdTaiQuay))) == 432m &&
               Convert.ToDecimal(conn.LayGiaTri("SELECT THANHTIEN FROM CTHD WHERE MAHD=@ma",
                   new SqlParameter("@ma", hdTaiQuay))) == 540m,
             "Hoa don WinForms giu dung gia va khuyen mai da chot tren web");

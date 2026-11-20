@@ -33,8 +33,9 @@ internal static partial class Program
         decimal tienGiamHoaDon = Convert.ToDecimal(header.Rows[0]["TIENGIAM"]);
         decimal tongThanhToan = Convert.ToDecimal(header.Rows[0]["TONGTIEN"]);
         Check(header.Rows.Count == 1 && header.Rows[0]["MAVOUCHER"].ToString() == "VC0001" &&
-            header.Rows[0].IsNull("MACTKM_HD") && tienGiamHoaDon == 87 && tongThanhToan == 493,
-            "Luu voucher cao hon moc va dung tong giam hoa don");
+            header.Rows[0]["MACTKM_HD"].ToString() == "KM0001" &&
+            tienGiamHoaDon == 116 && tongThanhToan == 464,
+            "Ap dung dong thoi voucher va KM hoa don roi luu tong giam");
         Check(Convert.ToDecimal(header.Rows[0]["TIENKHACHDUA"]) == 500m,
             "Luu so tien khach da dua cung hoa don");
         Check(dongDaLuu.Count == 2 && dongDaLuu.Single(dong => dong.MaThuoc == "TH0001").ThanhTien == 180 &&
@@ -51,14 +52,14 @@ internal static partial class Program
         DataTable theoThang = thongKe.ThuChiTheoThang(nam);
         DataTable theoQuy = thongKe.ThuChiTheoQuy(nam);
         DataTable theoNam = thongKe.ThuChiTheoNam(nam, nam);
-        Check(Convert.ToDecimal(theoThang.Rows[thang - 1]["Thu"]) == 493m &&
-              Convert.ToDecimal(theoQuy.Rows[quy - 1]["Thu"]) == 493m &&
-              Convert.ToDecimal(theoNam.Rows[0]["Thu"]) == 493m,
+        Check(Convert.ToDecimal(theoThang.Rows[thang - 1]["Thu"]) == 464m &&
+              Convert.ToDecimal(theoQuy.Rows[quy - 1]["Thu"]) == 464m &&
+              Convert.ToDecimal(theoNam.Rows[0]["Thu"]) == 464m,
             "Thong ke thang quy nam khop tong hoa don da luu");
         Check(Convert.ToDecimal(thongKe.TongTienTheoNhanVienQuy(nam).Rows.Cast<DataRow>()
-                  .Single(row => row["Ma"].ToString() == "TC")["TC"]) == 493m &&
+                  .Single(row => row["Ma"].ToString() == "TC")["TC"]) == 464m &&
               Convert.ToDecimal(thongKe.TongTienTheoKhachHangQuy(nam).Rows.Cast<DataRow>()
-                  .Single(row => row["Ma"].ToString() == "TC")["TC"]) == 493m,
+                  .Single(row => row["Ma"].ToString() == "TC")["TC"]) == 464m,
             "Thong ke nhan vien va khach hang khop tong thanh toan");
         Check(Convert.ToDecimal(thongKe.TongTienTheoSanPhamQuy(nam).Rows.Cast<DataRow>()
                   .Single(row => row["Ma"].ToString() == "TC")["TC"]) == 580m,
@@ -76,7 +77,7 @@ internal static partial class Program
         {
             var trang = sachExcel.Worksheet("Thống kê");
             Check(trang.Cell(quy + 1, 1).GetString() == $"Q{quy}" &&
-                  trang.Cell(quy + 1, 2).GetValue<decimal>() == 493m,
+                  trang.Cell(quy + 1, 2).GetValue<decimal>() == 464m,
                 "Xuat bao cao quy ra xlsx va doc lai dung so thu");
         }
 
@@ -91,13 +92,13 @@ internal static partial class Program
                     hang.SizeType == SizeType.Absolute && hang.Height == 30),
                 "Cac dong tong ket hoa don cao deu nhau");
             Check(TongKet("lblTienHang").Contains("580") &&
-                  TongKet("lblGiamHoaDon").Contains("87") &&
+                  TongKet("lblGiamHoaDon").Contains("116") &&
                   TongKet("lblLoaiKhuyenMai").Contains("VC0001") &&
                   TongKet("lblLoaiKhuyenMai").Contains("Khuyen mai test") &&
-                  TongKet("lblLoaiKhuyenMai").Contains("15% tiền hàng") &&
-                  TongKet("lblTongSauGiam").Contains("493") &&
+                  TongKet("lblLoaiKhuyenMai").Contains("20% tiền hàng") &&
+                  TongKet("lblTongSauGiam").Contains("464") &&
                   TongKet("lblTienKhachDua").Contains("500") &&
-                  TongKet("lblTienThoi").Contains("7"),
+                  TongKet("lblTienThoi").Contains("36"),
                 "Chi tiet hoa don hien tien sau giam, voucher, tien khach dua va tien thoi");
             var maLoc = (TextBox)formDanhSach.Controls.Find("txtLocMaHoaDon", true).Single();
             var tim = (Button)formDanhSach.Controls.Find("btnTimHoaDon", true).Single();
@@ -248,15 +249,16 @@ internal static partial class Program
             var dgv = (DataGridView)form.Controls.Find("dgvChiTiet", true).Single();
             typeof(frmTaoHoaDon).GetMethod("HienThiChiTiet", BindingFlags.Instance | BindingFlags.NonPublic)!
                 .Invoke(form, null);
-            Check(lblNguon.Text.Contains("KMHoaDon - KM0001 (5%;", StringComparison.Ordinal) &&
+            Check(lblNguon.Text == "NULL" &&
                 dgv.Rows[0].Cells["LoaiCTKM"].Value?.ToString() == "KMSanPham (10%)" &&
                 dgv.Rows[1].Cells["LoaiCTKM"].Value?.ToString() == "Không",
-                "Form nhap hien ro loai va phan tram KM tung dong va KMHoaDon");
+                "Form hien NULL voucher khi chua nhap ma va ro loai KM tung dong");
 
             txtVoucher.Text = "VC0001";
             Application.DoEvents();
-            Check(lblNguon.Text == "KMVoucher - VC0001 (15%)",
-                "Form nhap hien KMVoucher va dung phan tram khi voucher duoc ap dung");
+            Check(lblNguon.Text.Contains("Voucher VC0001") &&
+                  lblNguon.Text.Contains("15%"),
+                "Form hien voucher rieng tren dong Voucher giam gia");
             form.Close();
         }
 

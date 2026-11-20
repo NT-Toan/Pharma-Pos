@@ -147,7 +147,8 @@ public sealed class frmDonDatThuoc : Form
         lblThongTin.Text = $"Đơn #{don.MaDon} · {don.HoTen} · {don.SDT}\n" +
             $"Địa chỉ: {don.DiaChi}    Ghi chú: {don.GhiChu ?? "—"}\n" +
             $"Giảm SP: {don.GiamSanPham:N0} đ    " +
-            $"KM hóa đơn: {don.MaVoucher ?? don.MaCTKMHD ?? "Không"}    Giảm: {don.TienGiam:N0} đ    " +
+            $"Voucher: {don.MaVoucher ?? "Không"}    " +
+            $"KM hóa đơn: {don.MaCTKMHD ?? "Không"}    Giảm: {don.TienGiam:N0} đ    " +
             $"Tổng sau giảm: {don.TongTamTinh:N0} đ    " +
             (don.DaTruTon ? "Kho: đã giữ thuốc" : "Đơn cũ: chưa trừ tồn") +
             (don.MaHD == null ? "" : $"    Hóa đơn: {don.MaHD}") + "\n" +
