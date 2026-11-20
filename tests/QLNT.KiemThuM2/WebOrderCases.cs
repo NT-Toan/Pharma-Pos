@@ -45,8 +45,8 @@ internal static partial class Program
         Check(bus.XacNhan(maTaiQuay, "NV0001", 432m).ThanhCong && Ton() == 7,
             "Xac nhan don web tao hoa don khong tru ton lan hai");
         string hdTaiQuay = MaHD(maTaiQuay);
-        Check(Convert.ToDecimal(conn.LayGiaTri(        "SELECT TONGTIEN FROM HOADON WHERE MAHD=@ma",
-              new SqlParameter("@ma", hdTaiQuay))) == 432m &&
+        Check(Convert.ToDecimal(conn.LayGiaTri("SELECT TONGTIEN FROM HOADON WHERE MAHD=@ma",
+                  new SqlParameter("@ma", hdTaiQuay))) == 432m &&
               Convert.ToDecimal(conn.LayGiaTri("SELECT THANHTIEN FROM CTHD WHERE MAHD=@ma",
                   new SqlParameter("@ma", hdTaiQuay))) == 540m,
             "Hoa don WinForms giu dung gia va khuyen mai da chot tren web");
