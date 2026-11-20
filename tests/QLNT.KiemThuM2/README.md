@@ -12,7 +12,15 @@ Chương trình luôn tự đặt `QLNT_DATABASE` thành `QLNT_Test_PN_` + GUID,
 
 [Program.cs](./Program.cs) tạo schema tối thiểu có khóa/ràng buộc, kiểm tra thêm phiếu, mở form ẩn và dọn database/file tạm trong `finally`. [Cases.cs](./Cases.cs) kiểm tra sửa/xóa, tranh chấp kho, tổng chi M4 và file Excel thực.
 
-## Kết quả chạy đầy đủ ngày 09/11/2026
+## Kết quả kiểm tra toàn hệ thống ngày 14/11/2026
+
+- Build solution (DAO, BUS, WinForms, Web, kiểm thử): **0 lỗi, 0 cảnh báo** với `--no-restore`.
+- Bộ kiểm thử tích hợp: **305/305 xác nhận đạt**, gồm Phiếu nhập, Hóa đơn, tồn kho, tìm kiếm, Excel, PDF, bố cục WinForms và luồng đơn web. Database thử riêng được xóa sau khi chạy; database ứng dụng không bị ghi.
+- Luồng HTTP web trên database thử riêng: tải trang chủ, báo giá giỏ hàng, áp mã voucher, gửi đơn có token chống giả mạo, kiểm tra tồn kho giảm, thử voucher thành viên không hợp lệ và số lượng vượt tồn; các trang chính sách, logo, CSS đều trả HTTP 200.
+- Đối chiếu database ứng dụng ở chế độ chỉ đọc: không có đơn web đã xác nhận thiếu hóa đơn, hóa đơn đơn web lệch tiền hoặc thuốc tồn âm.
+- Chưa kiểm bằng thao tác tay trên từng màn hình và môi trường triển khai ngoài máy phát triển. Các ca tự động là xác nhận điều kiện cụ thể, không đại diện cho 305 quy trình người dùng riêng biệt.
+
+## Kết quả lịch sử ngày 09/11/2026
 
 Đã build và chạy toàn bộ bộ kiểm thử trên bản source hiện tại:
 

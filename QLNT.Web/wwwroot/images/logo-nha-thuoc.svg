@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Biểu tượng nhà thuốc">
+  <defs>
+    <linearGradient id="cross" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#064789"/>
+      <stop offset="1" stop-color="#427AA1"/>
+    </linearGradient>
+  </defs>
+  <circle cx="64" cy="64" r="53" fill="#EBF2FA"/>
+  <path d="M99 21A53 53 0 1 0 112 55" fill="none" stroke="#427AA1" stroke-width="7" stroke-linecap="round"/>
+  <path d="M52 32h24a7 7 0 0 1 7 7v13h13a7 7 0 0 1 7 7v14a7 7 0 0 1-7 7H83v13a7 7 0 0 1-7 7H52a7 7 0 0 1-7-7V80H32a7 7 0 0 1-7-7V59a7 7 0 0 1 7-7h13V39a7 7 0 0 1 7-7Z" fill="url(#cross)"/>
+  <path d="M37 91c14-6 24-17 34-29 9-11 18-18 31-22-10 10-16 23-22 34-8 14-19 23-35 27" fill="#fff"/>
+  <path d="M67 94c12-12 20-22 24-33 5 6 8 13 9 20-8 8-19 13-33 13Z" fill="#EBF2FA"/>
+</svg>

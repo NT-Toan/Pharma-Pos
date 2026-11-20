@@ -20,7 +20,10 @@ public sealed class frmThongKe : Form
     private readonly Label lblTongChiTuyChon = new();
     private readonly Label lblLoiNhuanTuyChon = new();
     private readonly Label lblTrangThai = new();
-    private readonly DataGridView dgvDuLieu = new();
+    private readonly DataGridView dgvDuLieu = new() { Name = "dgvBangThongKe" };
+    private readonly Panel pnlBaoCao = new() { Name = "pnlBaoCaoThongKe", Dock = DockStyle.Fill, AutoScroll = true };
+    private readonly BieuDoThongKe bieuDoCot = new(KieuBieuDo.Cot) { Name = "bieuDoCotThongKe" };
+    private readonly BieuDoThongKe bieuDoTron = new(KieuBieuDo.Tron) { Name = "bieuDoTronThongKe" };
     private DataTable? bangHienTai;
 
     public frmThongKe()
@@ -161,12 +164,48 @@ public sealed class frmThongKe : Form
         dgvDuLieu.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
         dgvDuLieu.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
 
+        var khungBaoCao = new TableLayoutPanel
+        {
+            Name = "khungBaoCaoThongKe", Dock = DockStyle.Top,
+            Height = 600, ColumnCount = 1, RowCount = 2,
+            Padding = new Padding(10, 0, 10, 8), BackColor = GiaoDienChung.Nen
+        };
+        khungBaoCao.RowStyles.Add(new RowStyle(SizeType.Absolute, 210));
+        khungBaoCao.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        var nhomBang = new GroupBox
+        {
+            Name = "grpBangThongKe", Text = "Bảng thống kê", Dock = DockStyle.Fill,
+            Padding = new Padding(8), BackColor = Color.White
+        };
+        nhomBang.Controls.Add(dgvDuLieu);
+        khungBaoCao.Controls.Add(nhomBang, 0, 0);
+
+        var khungBieuDo = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1 };
+        khungBieuDo.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
+        khungBieuDo.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
+        var nhomCot = new GroupBox
+        {
+            Name = "grpCotThongKe", Text = "Biểu đồ cột", Dock = DockStyle.Fill,
+            Padding = new Padding(8), BackColor = Color.White
+        };
+        var nhomTron = new GroupBox
+        {
+            Name = "grpTronThongKe", Text = "Biểu đồ tròn", Dock = DockStyle.Fill,
+            Padding = new Padding(8), BackColor = Color.White
+        };
+        nhomCot.Controls.Add(bieuDoCot);
+        nhomTron.Controls.Add(bieuDoTron);
+        khungBieuDo.Controls.Add(nhomCot, 0, 0);
+        khungBieuDo.Controls.Add(nhomTron, 1, 0);
+        khungBaoCao.Controls.Add(khungBieuDo, 0, 1);
+        pnlBaoCao.Controls.Add(khungBaoCao);
+
         lblTrangThai.Dock = DockStyle.Bottom;
         lblTrangThai.Height = 32;
         lblTrangThai.Padding = new Padding(12, 8, 0, 0);
         lblTrangThai.ForeColor = GiaoDienChung.ChuPhu;
 
-        Controls.Add(dgvDuLieu);
+        Controls.Add(pnlBaoCao);
         Controls.Add(pnlTop);
         Controls.Add(lblTrangThai);
 
@@ -214,6 +253,9 @@ public sealed class frmThongKe : Form
 
             dgvDuLieu.DataSource = bangHienTai;
             DinhDangLuoi();
+            DuLieuBieuDo duLieuBieuDo = bus.TaoDuLieuBieuDo(bangHienTai!, cboLoaiThongKe.SelectedIndex);
+            bieuDoCot.DuLieu = duLieuBieuDo;
+            bieuDoTron.DuLieu = duLieuBieuDo;
 
             DateTime tuDauNam = new(nam, 1, 1);
             DateTime denCuoiNam = new(nam, 12, 31);

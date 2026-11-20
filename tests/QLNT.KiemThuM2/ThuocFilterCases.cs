@@ -12,8 +12,8 @@ internal static partial class Program
         {
             var danhSach = new ArrayList
             {
-                new Thuoc { MaThuoc = "TH0001", TenThuoc = "Paracetamol 500mg", MaLoai = "LT0001", DonGia = 5000 },
-                new Thuoc { MaThuoc = "TH0002", TenThuoc = "Paracetamol 650mg", MaLoai = "LT0001", DonGia = 20000 },
+                new Thuoc { MaThuoc = "TH0001", TenThuoc = "Paracetamol 500mg", MaLoai = "LT0001", DonGia = 5000, SoLuong = 5, HSD = new DateTime(2026, 11, 30) },
+                new Thuoc { MaThuoc = "TH0002", TenThuoc = "Paracetamol 650mg", MaLoai = "LT0001", DonGia = 20000, SoLuong = 3, HSD = new DateTime(2027, 12, 31) },
                 new Thuoc { MaThuoc = "TH0003", TenThuoc = "Para Extra", MaLoai = "LT0002", DonGia = 25000 },
                 new Thuoc { MaThuoc = "TH0004", TenThuoc = "Ibuprofen", MaLoai = "LT0002", DonGia = 10000 },
                 new Thuoc { MaThuoc = "TH0005", TenThuoc = "Vitamin C", MaLoai = "LT0003", DonGia = 30000 },
@@ -58,6 +58,39 @@ internal static partial class Program
             ];
             foreach (var ca in cacCa)
                 Check(ca.Loc().Cast<Thuoc>().Select(t => t.MaThuoc).SequenceEqual(ca.Ma), "Loc Thuoc: " + ca.Ten);
+
+            Check(typeof(ThuocBUS).GetMethod(nameof(ThuocBUS.TimKiemNangCao))!
+                .GetParameters().Any(p => p.Name == "dieuKienThem"),
+                "Loc Thuoc: BUS nhan them dieu kien tuy chon tu form");
+            string[] MaThuoc(ArrayList ketQua) => ketQua.Cast<Thuoc>().Select(t => t.MaThuoc).ToArray();
+            Check(MaThuoc(bus.TimKiemNangCao(dieuKienThem: new DieuKien
+                { TenTruong = nameof(Thuoc.TenThuoc), Phep = PhepSoSanh.Chua, GiaTri = "Para", Not = true }))
+                .SequenceEqual(["TH0004", "TH0005", "TH0006", "TH0007"]),
+                "Loc Thuoc: NOT tren ten thuoc");
+            Check(MaThuoc(bus.TimKiemNangCao(dieuKienThem: new DieuKien
+                { TenTruong = nameof(Thuoc.DonGia), Phep = PhepSoSanh.Khac, GiaTri = 10000m }))
+                .SequenceEqual(["TH0001", "TH0002", "TH0003", "TH0005", "TH0006", "TH0007", "TH0008"]),
+                "Loc Thuoc: don gia khac 10000");
+            Check(MaThuoc(bus.TimKiemNangCao(dieuKienThem: new DieuKien
+                { TenTruong = nameof(Thuoc.DonGia), Phep = PhepSoSanh.Lon, GiaTri = 25000m }))
+                .SequenceEqual(["TH0005"]),
+                "Loc Thuoc: don gia lon hon 25000");
+            Check(MaThuoc(bus.TimKiemNangCao(dieuKienThem: new DieuKien
+                { TenTruong = nameof(Thuoc.SoLuong), Phep = PhepSoSanh.LonHoacBang, GiaTri = 5 }))
+                .SequenceEqual(["TH0001"]),
+                "Loc Thuoc: ton kho lon hon hoac bang 5");
+            Check(MaThuoc(bus.TimKiemNangCao(dieuKienThem: new DieuKien
+                { TenTruong = nameof(Thuoc.HSD), Phep = PhepSoSanh.LonHoacBang, GiaTri = new DateTime(2027, 1, 1) }))
+                .SequenceEqual(["TH0002"]),
+                "Loc Thuoc: han dung tu nam 2027");
+            Check(MaThuoc(bus.TimKiemNangCao(tenThuoc: "Para", dieuKienThem: new DieuKien
+                { TenTruong = nameof(Thuoc.DonGia), Phep = PhepSoSanh.Lon, GiaTri = 20000m }))
+                .SequenceEqual(["TH0003"]),
+                "Loc Thuoc: ket hop AND dieu kien them");
+            Check(MaThuoc(bus.TimKiemNangCao(tenThuoc: "Para", noi: PhepNoi.Or, dieuKienThem: new DieuKien
+                { TenTruong = nameof(Thuoc.DonGia), Phep = PhepSoSanh.Bang, GiaTri = 30000m }))
+                .SequenceEqual(["TH0001", "TH0002", "TH0003", "TH0005", "TH0008"]),
+                "Loc Thuoc: ket hop OR dieu kien them khong lap");
 
             ArrayList banSao = bus.TimKiemNangCao();
             banSao.Clear();

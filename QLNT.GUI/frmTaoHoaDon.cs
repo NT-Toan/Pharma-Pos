@@ -25,9 +25,9 @@ public sealed class frmTaoHoaDon : Form
     private readonly Label lblLoaiKhuyenMaiHoaDon = new()
     {
         Name = "lblLoaiKhuyenMaiHoaDon",
-        AutoSize = false,
-        AutoEllipsis = true,
-        Dock = DockStyle.Fill,
+        AutoSize = true,
+        MaximumSize = new Size(700, 120),
+        Anchor = AnchorStyles.Right,
         TextAlign = ContentAlignment.MiddleRight,
         Text = "Không áp dụng",
         ForeColor = GiaoDienChung.ChuPhu
@@ -40,6 +40,7 @@ public sealed class frmTaoHoaDon : Form
     private readonly Label lblTrangThai = new() { AutoSize = true, ForeColor = GiaoDienChung.ChuPhu };
     private readonly Button btnLuu = new() { Text = "Lưu hóa đơn", AutoSize = true };
     private readonly HoaDon? hoaDonSua;
+    private readonly ToolTip chiTietToolTip = new();
     private readonly Dictionary<string, int> tonKhoCongLai = new(StringComparer.OrdinalIgnoreCase);
     private decimal tongTienDaLuu;
     private decimal tongTienHienTai;
@@ -56,6 +57,7 @@ public sealed class frmTaoHoaDon : Form
     {
         hoaDonSua = hoaDonCanSua;
         tongTienDaLuu = hoaDonSua?.TongTien ?? 0m;
+        HoaDonBUS.TaiLaiDuLieuBanHang();
         Text = hoaDonSua == null ? "Lập hóa đơn bán hàng" : $"Sửa hóa đơn {hoaDonSua.MaHD}";
         StartPosition = FormStartPosition.CenterParent;
         MinimumSize = new Size(900, 600);
@@ -136,7 +138,7 @@ public sealed class frmTaoHoaDon : Form
             AutoSize = true,
             ColumnCount = 4,
             RowCount = 4,
-            Padding = new Padding(12),
+            Padding = new Padding(8),
             BackColor = GiaoDienChung.MatTrang
         };
         thongTin.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
@@ -218,32 +220,25 @@ public sealed class frmTaoHoaDon : Form
         var tongTien = new TableLayoutPanel
         {
             Dock = DockStyle.Top,
-            Height = 270,
+            AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink,
             ColumnCount = 2,
-            RowCount = 9,
-            Padding = new Padding(14),
+            RowCount = 8,
+            Padding = new Padding(8),
             BackColor = GiaoDienChung.MatTrang
         };
-        for (int i = 0; i < 9; i++)
+        for (int i = 0; i < 8; i++)
             tongTien.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         tongTien.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 65));
         tongTien.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 35));
-        ThemDongTong(tongTien, 0, "Tổng tiền hàng trước giảm:", lblTongGoc);
+        ThemDongTong(tongTien, 0, "TỔNG TIỀN CẦN THANH TOÁN:", lblTongTien);
         ThemDongTong(tongTien, 1, "Giảm giá sản phẩm:", lblGiamSanPham);
         ThemDongTong(tongTien, 2, "Giảm giá hóa đơn:", lblGiamHoaDon);
-        ThemDongTong(tongTien, 3, "CTKM hóa đơn / mức giảm:", lblLoaiKhuyenMaiHoaDon);
-        ThemDongTong(tongTien, 4, "TỔNG THANH TOÁN:", lblTongTien);
+        ThemDongTong(tongTien, 3, "Voucher giảm giá:", lblLoaiKhuyenMaiHoaDon);
+        ThemDongTong(tongTien, 4, "Tổng tiền được giảm giá:", lblTongGoc);
         ThemDongTong(tongTien, 5, TaoNhanTruong("Tổng đã lưu / điều chỉnh:"), lblTongTienDaLuu);
         ThemDongTong(tongTien, 6, lblNhanTienKhach, nudTienKhachDua);
         ThemDongTong(tongTien, 7, lblNhanTienThua, lblTienThua);
-        tongTien.Controls.Add(new Label
-        {
-            Text = "Tiền khách đưa / thu thêm chỉ dùng để đối chiếu; schema hiện tại không lưu khoản thanh toán.",
-            AutoSize = true,
-            ForeColor = GiaoDienChung.ChuPhu,
-            Padding = new Padding(0, 5, 0, 0)
-        }, 0, 8);
-        tongTien.SetColumnSpan(tongTien.GetControlFromPosition(0, 8)!, 2);
         lblNhanTienKhach.Text = hoaDonSua == null ? "Tiền khách đưa:" : "Tiền khách đưa thêm:";
         return tongTien;
     }
@@ -307,13 +302,13 @@ public sealed class frmTaoHoaDon : Form
             long conCoTheThem = (long)thuoc.SoLuong + hoanLai - (dongHienTai?.SoLuong ?? 0);
             return (int)Math.Clamp(conCoTheThem, 0, int.MaxValue);
         });
-        if (form.ShowDialog(this) != DialogResult.OK || form.ThuocDuocChon == null)
+        if (form.ShowDialog(this) != DialogResult.OK || frmChonThuoc.ThuocDuocChon == null)
             return;
 
-        Thuoc thuoc = form.ThuocDuocChon;
+        Thuoc thuoc = frmChonThuoc.ThuocDuocChon;
         DongHoaDonDuThao? dongCu = chiTiet.FirstOrDefault(d =>
             d.Thuoc.MaThuoc.Equals(thuoc.MaThuoc, StringComparison.OrdinalIgnoreCase));
-        int soLuongMoi = checked((dongCu?.SoLuong ?? 0) + form.SoLuongDuocChon);
+        int soLuongMoi = checked((dongCu?.SoLuong ?? 0) + frmChonThuoc.SoLuongDuocChon);
         tonKhoCongLai.TryGetValue(thuoc.MaThuoc, out int hoanLai);
         if ((thuoc.HSD.HasValue && thuoc.HSD.Value.Date < dtpNgayLap.Value.Date) ||
             soLuongMoi > (long)thuoc.SoLuong + hoanLai)
@@ -368,7 +363,8 @@ public sealed class frmTaoHoaDon : Form
             khachLe ? null : khachHang,
             dtpNgayLap.Value.Date,
             txtVoucher.Text,
-            chiTiet);
+            chiTiet,
+            nudTienKhachDua.Value);
         if (!ketQua.ThanhCong)
         {
             chiTiet.Insert(Math.Clamp(viTri, 0, chiTiet.Count), dong);
@@ -490,15 +486,37 @@ public sealed class frmTaoHoaDon : Form
             return;
         }
 
-        lblTongGoc.Text = ketQua.TongGoc.ToString("N2");
-        lblGiamSanPham.Text = ketQua.TienGiamSanPham.ToString("N2");
-        lblGiamHoaDon.Text = ketQua.TienGiamHoaDon.ToString("N2");
-        lblLoaiKhuyenMaiHoaDon.Text = ketQua.MaVoucher != null
-            ? $"KMVoucher - {ketQua.MaVoucher} ({ketQua.PhanTramGiamHoaDon:0.##}%)"
-            : ketQua.MaCTKMHD != null
-                ? $"KMHoaDon - {ketQua.MaCTKMHD} ({ketQua.PhanTramGiamHoaDon:0.##}%; mốc {ketQua.MucTienHD:N2} đ)"
-                : "Không áp dụng";
         lblTongTien.Text = ketQua.TongTien.ToString("N2");
+        if (ketQua.TienGiamSanPham > 0)
+        {
+            var dongGiamSanPham = chiTiet
+                .Where(dong => dong.PhanTramGiam > 0)
+                .Select(dong =>
+                {
+                    decimal tienGiam = dong.Thuoc.DonGia * dong.SoLuong - dong.ThanhTien;
+                    return $"{dong.Thuoc.MaThuoc} - {dong.Thuoc.TenThuoc}: {dong.PhanTramGiam:0.##}% - {tienGiam:N2} đ";
+                });
+            lblGiamSanPham.Text = $"Tổng: {ketQua.TienGiamSanPham:N2} đ\n" +
+                                  string.Join("\n", dongGiamSanPham);
+        }
+        else
+        {
+            lblGiamSanPham.Text = "NULL";
+        }
+
+        lblGiamHoaDon.Text = ketQua.TienGiamHoaDonDuKien > 0
+            ? $"KM HĐ {ketQua.MaCTKMHDDuKien}:\n{ketQua.PhanTramHoaDonDuKien:0.##}% (mốc {ketQua.MucTienHDDuKien:N2} đ) - {ketQua.TienGiamHoaDonDuKien:N2} đ"
+            : "NULL";
+        lblLoaiKhuyenMaiHoaDon.Text = ketQua.MaVoucherDuKien != null
+            ? $"Voucher {ketQua.MaVoucherDuKien}:\n{ketQua.PhanTramVoucherDuKien:0.##}% - {ketQua.TienGiamVoucherDuKien:N2} đ"
+            : "NULL";
+        chiTietToolTip.SetToolTip(lblGiamSanPham, lblGiamSanPham.Text);
+        chiTietToolTip.SetToolTip(lblGiamHoaDon, lblGiamHoaDon.Text);
+        chiTietToolTip.SetToolTip(lblLoaiKhuyenMaiHoaDon, lblLoaiKhuyenMaiHoaDon.Text);
+        decimal tongTienDuocGiam = ketQua.TienGiamSanPham + ketQua.TienGiamHoaDon;
+        lblTongGoc.Text = tongTienDuocGiam > 0
+            ? tongTienDuocGiam.ToString("N2")
+            : "NULL";
         tongTienHienTai = ketQua.TongTien;
         decimal chenhLech = tongTienHienTai - tongTienDaLuu;
         string hienChenhLech = chenhLech > 0
@@ -571,8 +589,8 @@ public sealed class frmTaoHoaDon : Form
         }
 
         KetQuaLuuHoaDon ketQuaLuu = hoaDonSua == null
-            ? hoaDonBUS.TaoHoaDon(nhanVien, khachLe ? null : khachHang, dtpNgayLap.Value.Date, txtVoucher.Text, chiTiet)
-            : hoaDonBUS.SuaHoaDon(hoaDonSua, nhanVien, khachLe ? null : khachHang, dtpNgayLap.Value.Date, txtVoucher.Text, chiTiet);
+            ? hoaDonBUS.TaoHoaDon(nhanVien, khachLe ? null : khachHang, dtpNgayLap.Value.Date, txtVoucher.Text, chiTiet, nudTienKhachDua.Value)
+            : hoaDonBUS.SuaHoaDon(hoaDonSua, nhanVien, khachLe ? null : khachHang, dtpNgayLap.Value.Date, txtVoucher.Text, chiTiet, nudTienKhachDua.Value);
         if (!ketQuaLuu.ThanhCong)
         {
             MessageBox.Show(ketQuaLuu.ThongBao, "Không thể lưu hóa đơn", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -593,17 +611,29 @@ public sealed class frmTaoHoaDon : Form
 
     private void HienThiTongTienRong()
     {
-        lblTongGoc.Text = "0,00";
-        lblGiamSanPham.Text = "0,00";
-        lblGiamHoaDon.Text = "0,00";
-        lblLoaiKhuyenMaiHoaDon.Text = "Không áp dụng";
         lblTongTien.Text = "0,00";
+        lblGiamSanPham.Text = "NULL";
+        lblGiamHoaDon.Text = "NULL";
+        lblLoaiKhuyenMaiHoaDon.Text = "NULL";
+        lblTongGoc.Text = "NULL";
         lblTienThua.Text = "0,00";
     }
+
+    private static Label TaoNhanChiTietKhuyenMai(string ten) => new()
+    {
+        Name = ten,
+        AutoSize = false,
+        AutoEllipsis = true,
+        Dock = DockStyle.Fill,
+        TextAlign = ContentAlignment.MiddleRight,
+        Text = "Không áp dụng",
+        ForeColor = GiaoDienChung.ChuPhu
+    };
 
     private static Label TaoNhanTien(bool noiBat = false) => new()
     {
         AutoSize = true,
+        MaximumSize = new Size(700, 120),
         TextAlign = ContentAlignment.MiddleRight,
         Dock = DockStyle.Fill,
         Font = noiBat ? new Font("Segoe UI", 13F, FontStyle.Bold) : GiaoDienChung.PhongChu,

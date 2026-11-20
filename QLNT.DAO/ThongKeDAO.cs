@@ -10,7 +10,7 @@ public class ThongKeDAO
 
     public decimal TongThu(DateTime tuNgay, DateTime denNgay)
     {
-        string sql = "SELECT ISNULL(SUM(TONGTIEN), 0) FROM HOADON WHERE NGAYLAP >= @tuNgay AND NGAYLAP <= @denNgay";
+        string sql = "SELECT ISNULL(SUM(TONGTIEN), 0) FROM HOADON WHERE TRANGTHAITT = 'DaThanhToan' AND NGAYLAP >= @tuNgay AND NGAYLAP <= @denNgay";
         DataTable dt = conn.LayBang(sql,
             new SqlParameter("@tuNgay", tuNgay.Date),
             new SqlParameter("@denNgay", denNgay.Date.AddDays(1).AddSeconds(-1)));
@@ -37,7 +37,7 @@ public class ThongKeDAO
         string sql = @"
             SELECT MONTH(NGAYLAP) AS Thang, ISNULL(SUM(TONGTIEN), 0) AS TongThu
             FROM HOADON
-            WHERE YEAR(NGAYLAP) = @nam
+            WHERE YEAR(NGAYLAP) = @nam AND TRANGTHAITT = 'DaThanhToan'
             GROUP BY MONTH(NGAYLAP)";
         return conn.LayBang(sql, new SqlParameter("@nam", nam));
     }
@@ -57,7 +57,7 @@ public class ThongKeDAO
         string sql = @"
             SELECT YEAR(NGAYLAP) AS Nam, ISNULL(SUM(TONGTIEN), 0) AS TongThu
             FROM HOADON
-            WHERE YEAR(NGAYLAP) >= @tuNam AND YEAR(NGAYLAP) <= @denNam
+            WHERE YEAR(NGAYLAP) >= @tuNam AND YEAR(NGAYLAP) <= @denNam AND TRANGTHAITT = 'DaThanhToan'
             GROUP BY YEAR(NGAYLAP)";
         return conn.LayBang(sql,
             new SqlParameter("@tuNam", tuNam),
@@ -88,7 +88,7 @@ public class ThongKeDAO
                 ISNULL(SUM(CASE WHEN DATEPART(QUARTER, hd.NGAYLAP) = 4 THEN hd.TONGTIEN ELSE 0 END), 0) AS Q4,
                 ISNULL(SUM(hd.TONGTIEN), 0) AS TC
             FROM NHANVIEN nv
-            LEFT JOIN HOADON hd ON nv.MANV = hd.MANV AND YEAR(hd.NGAYLAP) = @nam
+            LEFT JOIN HOADON hd ON nv.MANV = hd.MANV AND YEAR(hd.NGAYLAP) = @nam AND hd.TRANGTHAITT = 'DaThanhToan'
             GROUP BY nv.MANV, nv.HOTENNV";
         return conn.LayBang(sql, new SqlParameter("@nam", nam));
     }
@@ -106,7 +106,7 @@ public class ThongKeDAO
                 ISNULL(SUM(hd.TONGTIEN), 0) AS TC
             FROM HOADON hd
             LEFT JOIN KHACHHANG kh ON hd.MAKH = kh.MAKH
-            WHERE YEAR(hd.NGAYLAP) = @nam
+            WHERE YEAR(hd.NGAYLAP) = @nam AND hd.TRANGTHAITT = 'DaThanhToan'
             GROUP BY hd.MAKH, kh.HOTEN";
         return conn.LayBang(sql, new SqlParameter("@nam", nam));
     }
@@ -124,7 +124,7 @@ public class ThongKeDAO
                 ISNULL(SUM(CASE WHEN hd.MAHD IS NOT NULL THEN ct.THANHTIEN ELSE 0 END), 0) AS TC
             FROM THUOC t
             LEFT JOIN CTHD ct ON t.MATHUOC = ct.MATHUOC
-            LEFT JOIN HOADON hd ON ct.MAHD = hd.MAHD AND YEAR(hd.NGAYLAP) = @nam
+            LEFT JOIN HOADON hd ON ct.MAHD = hd.MAHD AND YEAR(hd.NGAYLAP) = @nam AND hd.TRANGTHAITT = 'DaThanhToan'
             GROUP BY t.MATHUOC, t.TENTHUOC";
         return conn.LayBang(sql, new SqlParameter("@nam", nam));
     }

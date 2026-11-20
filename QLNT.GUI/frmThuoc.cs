@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Globalization;
 
 namespace QLNT.GUI;
 
@@ -13,6 +14,10 @@ public sealed class frmThuoc : Form
     private readonly TextBox txtLocTen = new() { Name = "txtLocTenThuoc", Dock = DockStyle.Fill, MaxLength = 100 };
     private readonly ComboBox cboLocLoai = new() { Name = "cboLocLoaiThuoc", Dock = DockStyle.Fill, DropDownStyle = ComboBoxStyle.DropDownList };
     private readonly ComboBox cboPhepNoi = new() { Name = "cboLocPhepNoi", Dock = DockStyle.Fill, DropDownStyle = ComboBoxStyle.DropDownList };
+    private readonly ComboBox cboLocTruongThem = new() { Name = "cboLocTruongThem", Dock = DockStyle.Fill, DropDownStyle = ComboBoxStyle.DropDownList };
+    private readonly ComboBox cboLocToanTuThem = new() { Name = "cboLocToanTuThem", Dock = DockStyle.Fill, DropDownStyle = ComboBoxStyle.DropDownList };
+    private readonly TextBox txtLocGiaTriThem = new() { Name = "txtLocGiaTriThem", Dock = DockStyle.Fill };
+    private readonly CheckBox chkLocNot = new() { Name = "chkLocNot", Text = "NOT", AutoSize = true, Anchor = AnchorStyles.Left };
     private readonly CheckBox chkGiaTu = new() { Name = "chkLocGiaTu", Text = "Giá từ:", AutoSize = true, Anchor = AnchorStyles.Left };
     private readonly CheckBox chkGiaDen = new() { Name = "chkLocGiaDen", Text = "Giá đến:", AutoSize = true, Anchor = AnchorStyles.Left };
     private readonly NumericUpDown nudGiaTu = OGiaLoc("nudLocGiaTu");
@@ -129,16 +134,17 @@ public sealed class frmThuoc : Form
     {
         var nhom = new GroupBox
         {
-            Name = "grpLocThuoc", Text = "Tìm kiếm nâng cao (giá bán)",
-            Dock = DockStyle.Top, Height = 145, Padding = new Padding(12, 8, 12, 6)
+            Name = "grpLocThuoc", Text = "Tìm kiếm nâng cao",
+            Dock = DockStyle.Top, Height = 180, Padding = new Padding(12, 8, 12, 6)
         };
-        var bang = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 6, RowCount = 3 };
+        var bang = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 6, RowCount = 4 };
         bang.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 90));
         bang.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 30));
         bang.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 90));
         bang.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 35));
         bang.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 80));
         bang.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 35));
+        bang.RowStyles.Add(new RowStyle(SizeType.Absolute, 34));
         bang.RowStyles.Add(new RowStyle(SizeType.Absolute, 34));
         bang.RowStyles.Add(new RowStyle(SizeType.Absolute, 34));
         bang.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
@@ -157,6 +163,15 @@ public sealed class frmThuoc : Form
         chkGiaTu.CheckedChanged += (_, _) => nudGiaTu.Enabled = chkGiaTu.Checked;
         chkGiaDen.CheckedChanged += (_, _) => nudGiaDen.Enabled = chkGiaDen.Checked;
 
+        bang.Controls.Add(Nhan("Thêm lọc:"), 0, 2);
+        bang.Controls.Add(cboLocTruongThem, 1, 2);
+        bang.Controls.Add(cboLocToanTuThem, 2, 2);
+        bang.Controls.Add(txtLocGiaTriThem, 3, 2);
+        bang.Controls.Add(chkLocNot, 4, 2);
+        cboLocTruongThem.Items.AddRange(["Không dùng", "Mã thuốc", "Tên thuốc", "Mã loại", "Đơn giá", "Tồn kho", "Hạn dùng"]);
+        cboLocTruongThem.SelectedIndexChanged += (_, _) => CapNhatToanTuThem();
+        cboLocTruongThem.SelectedIndex = 0;
+
         var thanhNut = new FlowLayoutPanel { Dock = DockStyle.Fill, WrapContents = false, Margin = Padding.Empty };
         var btnTim = new Button { Name = "btnTimKiemThuoc", Text = "Tìm", AutoSize = true };
         var btnXoaLoc = new Button { Name = "btnXoaBoLocThuoc", Text = "Xóa bộ lọc", AutoSize = true };
@@ -165,11 +180,12 @@ public sealed class frmThuoc : Form
         btnXoaLoc.Click += (_, _) => { DatLaiBoLoc(); TimKiem(); };
         btnTaiLai.Click += (_, _) => TaiLai();
         thanhNut.Controls.AddRange([btnTim, btnXoaLoc, btnTaiLai, lblLoiLoc]);
-        bang.Controls.Add(thanhNut, 0, 2);
+        bang.Controls.Add(thanhNut, 0, 3);
         bang.SetColumnSpan(thanhNut, 6);
         nhom.Controls.Add(bang);
 
-        foreach (Control o in new Control[] { txtLocMa, txtLocTen, nudGiaTu, nudGiaDen, cboLocLoai, cboPhepNoi })
+        foreach (Control o in new Control[] { txtLocMa, txtLocTen, nudGiaTu, nudGiaDen, cboLocLoai, cboPhepNoi,
+            cboLocTruongThem, cboLocToanTuThem, txtLocGiaTriThem, chkLocNot })
             o.KeyDown += (_, e) =>
             {
                 if (e.KeyCode != Keys.Enter) return;
@@ -177,6 +193,17 @@ public sealed class frmThuoc : Form
                 TimKiem();
             };
         return nhom;
+    }
+
+    private void CapNhatToanTuThem()
+    {
+        string? toanTuCu = cboLocToanTuThem.SelectedItem?.ToString();
+        cboLocToanTuThem.Items.Clear();
+        if (cboLocTruongThem.SelectedIndex is 1 or 2 or 3)
+            cboLocToanTuThem.Items.Add("Chứa");
+        cboLocToanTuThem.Items.AddRange(["=", "<>", ">", ">=", "<", "<="]);
+        int viTri = toanTuCu == null ? -1 : cboLocToanTuThem.Items.IndexOf(toanTuCu);
+        cboLocToanTuThem.SelectedIndex = viTri >= 0 ? viTri : 0;
     }
 
     private void DatLaiBoLoc()
@@ -189,7 +216,65 @@ public sealed class frmThuoc : Form
         nudGiaTu.Value = 0;
         nudGiaDen.Value = 0;
         cboPhepNoi.SelectedIndex = 0;
+        cboLocTruongThem.SelectedIndex = 0;
+        cboLocToanTuThem.SelectedItem = "=";
+        txtLocGiaTriThem.Clear();
+        chkLocNot.Checked = false;
         lblLoiLoc.Text = string.Empty;
+    }
+
+    private DieuKien? TaoDieuKienThem()
+    {
+        if (cboLocTruongThem.SelectedIndex <= 0)
+            return null;
+
+        string chuoi = txtLocGiaTriThem.Text.Trim();
+        if (chuoi.Length == 0)
+            throw new ArgumentException("Hãy nhập giá trị cho điều kiện thêm.");
+
+        string tenTruong = cboLocTruongThem.SelectedIndex switch
+        {
+            1 => nameof(Thuoc.MaThuoc),
+            2 => nameof(Thuoc.TenThuoc),
+            3 => nameof(Thuoc.MaLoai),
+            4 => nameof(Thuoc.DonGia),
+            5 => nameof(Thuoc.SoLuong),
+            6 => nameof(Thuoc.HSD),
+            _ => throw new ArgumentException("Trường lọc không hợp lệ.")
+        };
+        PhepSoSanh phep = cboLocToanTuThem.SelectedItem?.ToString() switch
+        {
+            "Chứa" => PhepSoSanh.Chua,
+            "=" => PhepSoSanh.Bang,
+            "<>" => PhepSoSanh.Khac,
+            ">" => PhepSoSanh.Lon,
+            ">=" => PhepSoSanh.LonHoacBang,
+            "<" => PhepSoSanh.Nho,
+            "<=" => PhepSoSanh.NhoHoacBang,
+            _ => throw new ArgumentException("Toán tử lọc không hợp lệ.")
+        };
+
+        object giaTri = chuoi;
+        if (tenTruong == nameof(Thuoc.DonGia))
+        {
+            if (!decimal.TryParse(chuoi, NumberStyles.Number, CultureInfo.CurrentCulture, out decimal gia))
+                throw new ArgumentException("Đơn giá cần là số hợp lệ.");
+            giaTri = gia;
+        }
+        else if (tenTruong == nameof(Thuoc.SoLuong))
+        {
+            if (!int.TryParse(chuoi, NumberStyles.Integer, CultureInfo.CurrentCulture, out int soLuong))
+                throw new ArgumentException("Tồn kho cần là số nguyên.");
+            giaTri = soLuong;
+        }
+        else if (tenTruong == nameof(Thuoc.HSD))
+        {
+            if (!DateTime.TryParseExact(chuoi, "dd/MM/yyyy", CultureInfo.CurrentCulture,
+                DateTimeStyles.None, out DateTime ngay))
+                throw new ArgumentException("Hạn dùng cần đúng dạng dd/MM/yyyy.");
+            giaTri = ngay.Date;
+        }
+        return new DieuKien { TenTruong = tenTruong, Phep = phep, GiaTri = giaTri, Not = chkLocNot.Checked };
     }
 
     private static void ThemO(TableLayoutPanel bang, string nhan, Control o, int cot, int hang)
@@ -386,7 +471,8 @@ public sealed class frmThuoc : Form
                 maLoai: (cboLocLoai.SelectedItem as LoaiThuoc)?.MaLoai,
                 giaTu: chkGiaTu.Checked ? nudGiaTu.Value : null,
                 giaDen: chkGiaDen.Checked ? nudGiaDen.Value : null,
-                noi: cboPhepNoi.SelectedIndex == 1 ? PhepNoi.Or : PhepNoi.And);
+                noi: cboPhepNoi.SelectedIndex == 1 ? PhepNoi.Or : PhepNoi.And,
+                dieuKienThem: TaoDieuKienThem());
             HienThi(ketQua);
             ChuanBiThem(false);
             lblLoiLoc.Text = string.Empty;
@@ -413,6 +499,29 @@ public sealed class frmThuoc : Form
         catch (Exception ex)
         {
             BaoLoi(ex);
+        }
+    }
+
+    public void CapNhatTonTuDatabase()
+    {
+        if (!IsHandleCreated || IsDisposed) return;
+        try
+        {
+            ThuocBUS.TaiLai();
+            var tonMoi = bus.LayTatCa().Cast<Thuoc>()
+                .ToDictionary(t => t.MaThuoc, StringComparer.OrdinalIgnoreCase);
+            foreach (ListViewItem dong in lvThuoc.Items)
+            {
+                if (dong.Tag is not Thuoc cu || !tonMoi.TryGetValue(cu.MaThuoc, out Thuoc? moi))
+                    continue;
+                dong.Tag = moi;
+                dong.SubItems[5].Text = moi.SoLuong.ToString();
+                if (dong.Selected) txtTonKho.Text = moi.SoLuong.ToString();
+            }
+        }
+        catch
+        {
+            // Giữ dữ liệu đang xem; nút Tải lại sẽ báo lỗi kết nối khi người dùng cần.
         }
     }
 
